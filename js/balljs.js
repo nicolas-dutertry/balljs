@@ -35,7 +35,8 @@ $(function () {
     
     var launchx = width / 2;    
     var level = 0;    
-    var mousePos = null;
+    var launchTarget = null;
+    var touchPos = null;
     var gameover = false;
 
     class Block {
@@ -235,27 +236,45 @@ $(function () {
     function startDrawing() {
         $("#canvas").on("vmousedown", function (evt) {
             if (balls.length === 0 && !gameover) {
-                mousePos = getMousePos(evt);
+                touchPos = getMousePos(evt);
                 drawStep();
             }
         });
         
         $("#canvas").on("vmousemove", function (evt) {            
-            if (balls.length === 0 && mousePos !== null) {
-                mousePos = getMousePos(evt);
+            if (balls.length === 0 && touchPos !== null) {
+				let mousePos = getMousePos(evt);
+				let y = height-ballradius+touchPos.y-mousePos.y;
+				
+				if(y < height-2*ballradius) {
+					launchTarget = {
+						x: launchx+touchPos.x-mousePos.x,
+						y: height-ballradius+touchPos.y-mousePos.y
+					}
+				} else {
+					launchTarget = null;
+				}
             }
         });
         
         $("#canvas").on("vmouseout", function (evt) {
-            mousePos = null;
+            launchTarget = null;
+            touchPos = null;
         });
         
         $("#canvas").on("vmouseup", function (evt) {
-            if (balls.length === 0 && mousePos !== null) {
-                mousePos = getMousePos(evt);
-                shoot(mousePos.x, mousePos.y);
-                mousePos = null;
-            }
+            if (balls.length === 0 && launchTarget !== null) {
+                let mousePos = getMousePos(evt);
+				
+                launchTarget = {
+					x: launchx+touchPos.x-mousePos.x,
+					y: height-ballradius+touchPos.y-mousePos.y
+				}
+				
+                shoot(launchTarget.x, launchTarget.y);
+            }            
+            launchTarget = null;
+            touchPos = null;
         });
 
         drawStep();
@@ -329,18 +348,18 @@ $(function () {
             balls[i].draw(currentTime);
         }
         
-        if(mousePos !== null) {
+        if(launchTarget !== null) {
             ctx.save();
             ctx.strokeStyle = "rgb(255,255,255)";
             ctx.setLineDash([5, 15]);
             ctx.beginPath();
             ctx.moveTo(launchx,height-ballradius);
-            ctx.lineTo(mousePos.x,mousePos.y);
+            ctx.lineTo(launchTarget.x,launchTarget.y);
             ctx.stroke();
             ctx.restore();
         }
 
-        if (!gameover && (balls.length !== 0 || mousePos !== null)) {
+        if (!gameover && (balls.length !== 0 || touchPos !== null)) {
             requestAnimationFrame(drawStep);
         }
     }
