@@ -165,8 +165,12 @@ $(function () {
         }
 
         draw(time) {
+			var newy = this.y + this.speedy * (time - this.starttime) / 1000;
+			if(newy > height - this.radius) {
+				return;
+			}
             var newx = this.x + this.speedx * (time - this.starttime) / 1000;
-            var newy = this.y + this.speedy * (time - this.starttime) / 1000;
+            
             ctx.fillStyle = "rgb(255,255,255)";
             ctx.beginPath();
             ctx.arc(newx, newy, this.radius, 0, Math.PI * 2, true);
@@ -314,9 +318,9 @@ $(function () {
 
         if (launchx !== null) {
             ctx.beginPath();
-            ctx.strokeStyle = "rgb(255,255,255)";
+            ctx.fillStyle = "rgb(255,255,255)";
             ctx.arc(launchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
-            ctx.stroke();
+            ctx.fill();
         }
 
         for (let i = 0; i < balls.length; i++) {
