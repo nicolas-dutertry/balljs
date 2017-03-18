@@ -13,7 +13,7 @@ $(function () {
     const speed = 700*ratio;
     const width = 500*ratio;
     const height = 710*ratio;
-    const fontSize = 20*ratio;
+    const fontSize = Math.floor(20*ratio);
     
     const blocks = new Array();
     const balls = new Array();
@@ -51,9 +51,11 @@ $(function () {
             var rgb = hsv2rgb(hue, 1, 1);
             ctx.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
             ctx.fillRect(this.x, this.y, this.length, this.length);
-            ctx.font = fontSize + "px Courier";
+            ctx.font = "bold " + fontSize + "px Courier";
             ctx.fillStyle = "rgb(0,0,0)";
-            ctx.fillText("" + this.counter, this.x + 5, this.y + this.length - 5);
+            let text = "" + this.counter;
+            let metric = ctx.measureText(text);
+            ctx.fillText(text, this.x + this.length/2 - metric.width/2, this.y + this.length/2 + fontSize/2);
         }
     }
 
