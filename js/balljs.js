@@ -247,9 +247,11 @@ $(function () {
 				let y = height-ballradius+touchPos.y-mousePos.y;
 				
 				if(y < height-2*ballradius) {
+					let x = launchx+touchPos.x-mousePos.x;					
+					
 					launchTarget = {
-						x: launchx+touchPos.x-mousePos.x,
-						y: height-ballradius+touchPos.y-mousePos.y
+						x: x,
+						y: y
 					}
 				} else {
 					launchTarget = null;
@@ -266,9 +268,12 @@ $(function () {
             if (balls.length === 0 && launchTarget !== null) {
                 let mousePos = getMousePos(evt);
 				
+				let y = height-ballradius+touchPos.y-mousePos.y;
+				let x = launchx+touchPos.x-mousePos.x;
+				
                 launchTarget = {
-					x: launchx+touchPos.x-mousePos.x,
-					y: height-ballradius+touchPos.y-mousePos.y
+					x: x,
+					y: y
 				}
 				
                 shoot(launchTarget.x, launchTarget.y);
@@ -349,14 +354,13 @@ $(function () {
         }
         
         if(launchTarget !== null) {
-            ctx.save();
-            ctx.strokeStyle = "rgb(255,255,255)";
-            ctx.setLineDash([5, 15]);
-            ctx.beginPath();
-            ctx.moveTo(launchx,height-ballradius);
-            ctx.lineTo(launchTarget.x,launchTarget.y);
-            ctx.stroke();
-            ctx.restore();
+			ctx.fillStyle = "rgb(255,255,255)";
+			let launcherLength = Math.sqrt(Math.pow(launchTarget.x-launchx, 2)+Math.pow(launchTarget.y-height+ballradius, 2));
+			for(let i = 1; i <= 16; i++) {
+				ctx.beginPath();
+				ctx.arc(launchx+(launchTarget.x-launchx)*i/8, height-ballradius+(launchTarget.y-height+ballradius)*i/8, launcherLength*ballradius/height, 0, Math.PI * 2, true);
+				ctx.fill();
+			}			
         }
 
         if (!gameover && (balls.length !== 0 || touchPos !== null)) {
