@@ -1,8 +1,10 @@
 $(function () {
     
+    const documentWidth = $(document).width();
+    const documentHeight = $(document).height();
+    
     const ratio1 = $(document).width() / 550;
     const ratio2 = $(document).height() / 820;
-    
     const ratio = (ratio1 > ratio2) ? ratio2 : ratio1;
 
     const ballradius = 9*ratio;
@@ -13,25 +15,46 @@ $(function () {
     const speed = 700*ratio;
     const width = 500*ratio;
     const height = 710*ratio;
+    const left = documentWidth/2-width/2;
     const fontSize = Math.floor(20*ratio);
     
     const blocks = new Array();
     const balls = new Array();
     
     $("#main").width(width);
+    $("#main").height(documentHeight);
+    $("#main").offset({top: 0, left: left});
     
     const scoreDiv = $("<div id='score'></div>");
     scoreDiv.css("font-size", fontSize*2 + "px");
+    scoreDiv.offset({top: 0, left: left});
+    scoreDiv.width(width);
+    scoreDiv.html("&nbsp;");
     $("#main").append(scoreDiv);
-    $("#main").append($("<canvas id='canvas' width='" + width + "' height='" + height + "'></canvas>"));
+    
+    $("#main").append($("<canvas id='canvas-background' width='" + width + "' height='" + height + "'></canvas>"));
+    $("#main").append($("<canvas id='canvas-blocks' width='" + width + "' height='" + height + "'></canvas>"));
+    $("#main").append($("<canvas id='canvas-balls' width='" + width + "' height='" + height + "'></canvas>"));
+    $("canvas").offset({top: scoreDiv.height(), left: left});
+    
     const messageDiv = $("<div id='message'></div>");
     messageDiv.css("font-size", fontSize*2 + "px");
+    messageDiv.offset({top: scoreDiv.height()+height, left: left});
+    messageDiv.width(width);
     messageDiv.html("&nbsp;");
     $("#main").append(messageDiv);
     
     
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+    const canvasBackground = document.getElementById("canvas-background");
+    const ctxBackground = canvasBackground.getContext("2d");
+    ctxBackground.fillStyle = "rgb(0,0,0)";
+    ctxBackground.fillRect(0, 0, canvasBackground.width, canvasBackground.height);
+    
+    const canvasBlocks = document.getElementById("canvas-blocks");
+    const ctxBlocks = canvasBlocks.getContext("2d");
+    
+    const canvasBalls = document.getElementById("canvas-balls");
+    const ctxBalls = canvasBalls.getContext("2d");
     
     var launchx = width / 2;    
     var level = 0;    
@@ -45,18 +68,39 @@ $(function () {
             this.y = y;
             this.length = length;
             this.counter = counter;
+            this.dirty = true;
         }
+        
+        decrease() {
+			this.dirty = true;
+			this.counter--;
+			
+			if(this.counter <= 0) {
+				ctxBlocks.clearRect(this.x-1, this.y-1, this.length+2, this.length+2);
+				return false;
+			}
+			
+			return true;
+		}
+		
+		moveDown() {
+			this.dirty = true;
+			ctxBlocks.clearRect(this.x-1, this.y-1, this.length+2, this.length+2);
+			this.y += blocklength + blockspace;
+		}
 
         draw() {
-            var hue = 0.1 + this.counter/50;
-            var rgb = hsv2rgb(hue, 1, 1);
-            ctx.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
-            ctx.fillRect(this.x, this.y, this.length, this.length);
-            ctx.font = "bold " + fontSize + "px Courier";
-            ctx.fillStyle = "rgb(0,0,0)";
-            let text = "" + this.counter;
-            let metric = ctx.measureText(text);
-            ctx.fillText(text, this.x + this.length/2 - metric.width/2, this.y + this.length/2 + fontSize/2);
+			if(this.dirty) {
+				var hue = 0.1 + this.counter/50;
+				var rgb = hsv2rgb(hue, 1, 1);
+				ctxBlocks.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+				ctxBlocks.fillRect(this.x, this.y, this.length, this.length);
+				ctxBlocks.font = "bold " + fontSize + "px Courier";
+				ctxBlocks.fillStyle = "rgb(0,0,0)";
+				let text = "" + this.counter;
+				let metric = ctxBlocks.measureText(text);
+				ctxBlocks.fillText(text, this.x + this.length/2 - metric.width/2, this.y + this.length/2 + fontSize/2);
+			}
         }
     }
 
@@ -156,9 +200,8 @@ $(function () {
                 this.speedy = -this.speedy;
             }
 
-            if (this.collisionBlock !== null) {
-                this.collisionBlock.counter--;
-                if (this.collisionBlock.counter === 0) {
+            if (this.collisionBlock !== null) {                
+                if (!this.collisionBlock.decrease()) {
                     let index = blocks.indexOf(this.collisionBlock);
                     blocks.splice(index, 1);
                 }
@@ -174,10 +217,10 @@ $(function () {
 			}
             var newx = this.x + this.speedx * (time - this.starttime) / 1000;
             
-            ctx.fillStyle = "rgb(255,255,255)";
-            ctx.beginPath();
-            ctx.arc(newx, newy, this.radius, 0, Math.PI * 2, true);
-            ctx.fill();
+            ctxBalls.fillStyle = "rgb(255,255,255)";
+            ctxBalls.beginPath();
+            ctxBalls.arc(newx, newy, this.radius, 0, Math.PI * 2, true);
+            ctxBalls.fill();
         }
     }
 
@@ -198,7 +241,7 @@ $(function () {
         level++;
         
         for (let i = 0; i < blocks.length; i++) {
-            blocks[i].y += blocklength + blockspace;
+            blocks[i].moveDown();
             if(blocks[i].y > blockspace + (blocklength+blockspace)*blockpercol) {
                 gameover = true;
             }
@@ -226,7 +269,7 @@ $(function () {
         window.msRequestAnimationFrame;
         
     function getMousePos(evt) {
-        var rect = canvas.getBoundingClientRect();
+        var rect = canvasBalls.getBoundingClientRect();
         return {
             x: evt.clientX - rect.left,
             y: evt.clientY - rect.top
@@ -234,14 +277,13 @@ $(function () {
     }
 
     function startDrawing() {
-        $("#canvas").on("vmousedown", function (evt) {
+        $("#canvas-balls").on("vmousedown", function (evt) {
             if (balls.length === 0 && !gameover) {
                 touchPos = getMousePos(evt);
-                drawStep();
             }
         });
         
-        $("#canvas").on("vmousemove", function (evt) {            
+        $("#canvas-balls").on("vmousemove", function (evt) {            
             if (balls.length === 0 && touchPos !== null) {
 				let mousePos = getMousePos(evt);
 				let y = height-ballradius+touchPos.y-mousePos.y;
@@ -259,12 +301,12 @@ $(function () {
             }
         });
         
-        $("#canvas").on("vmouseout", function (evt) {
+        $("#canvas-balls").on("vmouseout", function (evt) {
             launchTarget = null;
             touchPos = null;
         });
         
-        $("#canvas").on("vmouseup", function (evt) {
+        $("#canvas-balls").on("vmouseup", function (evt) {
             if (balls.length === 0 && launchTarget !== null) {
                 let mousePos = getMousePos(evt);
 				
@@ -286,11 +328,7 @@ $(function () {
     }
 
     function drawStep() {
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "rgb(0,0,0)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "rgb(255,255,255)";
+		ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
 
         var currentTime = Date.now();
         let changeLevel = false;
@@ -343,10 +381,10 @@ $(function () {
         }
 
         if (launchx !== null) {
-            ctx.beginPath();
-            ctx.fillStyle = "rgb(255,255,255)";
-            ctx.arc(launchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
-            ctx.fill();
+            ctxBalls.beginPath();
+            ctxBalls.fillStyle = "rgb(255,255,255)";
+            ctxBalls.arc(launchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
+            ctxBalls.fill();
         }
 
         for (let i = 0; i < balls.length; i++) {
@@ -354,16 +392,16 @@ $(function () {
         }
         
         if(launchTarget !== null) {
-			ctx.fillStyle = "rgb(255,255,255)";
+			ctxBalls.fillStyle = "rgb(255,255,255)";
 			let launcherLength = Math.sqrt(Math.pow(launchTarget.x-launchx, 2)+Math.pow(launchTarget.y-height+ballradius, 2));
 			for(let i = 1; i <= 16; i++) {
-				ctx.beginPath();
-				ctx.arc(launchx+(launchTarget.x-launchx)*i/8, height-ballradius+(launchTarget.y-height+ballradius)*i/8, launcherLength*ballradius/height, 0, Math.PI * 2, true);
-				ctx.fill();
+				ctxBalls.beginPath();
+				ctxBalls.arc(launchx+(launchTarget.x-launchx)*i/8, height-ballradius+(launchTarget.y-height+ballradius)*i/8, launcherLength*ballradius/height, 0, Math.PI * 2, true);
+				ctxBalls.fill();
 			}			
         }
 
-        if (!gameover && (balls.length !== 0 || touchPos !== null)) {
+        if (!gameover) {
             requestAnimationFrame(drawStep);
         }
     }
