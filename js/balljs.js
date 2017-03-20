@@ -243,7 +243,8 @@ function loadGame() {
         var speedx = x * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var speedy = y * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var currentTime = Date.now();
-        for (var i = 0; i < level; i++) {
+        var ballCount = level <= 1 ? 1 : level-1;        
+        for (var i = 0; i < ballCount; i++) {
             balls.push(new Ball(currentTime + i * 80, launchx, height - ballradius, speedx, speedy));
         }
 
