@@ -41,6 +41,13 @@ function loadGame() {
     reloadImg.width(fontSize*2);
     reloadImg.height(fontSize*2);
     
+    if(localStorage && localStorage.bestScore) {
+    	var bestDiv = $("#best");
+    	bestDiv.css("font-size", (fontSize-1) + "px");
+    	bestDiv.offset({top: 0, left: left+reloadPos+fontSize*2.5});    	
+    	bestDiv.html("BEST<br/>" + localStorage.bestScore);
+    }
+    
     $("canvas").attr("width", width);
     $("canvas").attr("height", height+2);
     $("canvas").offset({top: headerDiv.height(), left: left});
@@ -263,9 +270,24 @@ function loadGame() {
             }
         }
         
-        scoreDiv.html("" + level);
+        
         if(gameover) {
+        	if(localStorage) {
+        		if(localStorage.bestScore) {
+        			let bestScore = Number(localStorage.bestScore);
+        			if(level-1 > bestScore) {
+        				bestScore = level-1;
+        				localStorage.bestScore = bestScore;
+        			}
+        		} else {
+        			let bestScore = level-1;
+        			localStorage.bestScore = bestScore;
+        		}
+        	}
             messageDiv.html("Game over");
+            
+        } else {
+        	scoreDiv.html("" + level);
         }
     }
 

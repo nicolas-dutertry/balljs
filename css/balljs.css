@@ -43,6 +43,11 @@ canvas {
 	cursor: pointer;
 }
 
+#best {
+    position: fixed;
+    display: block;
+}
+
 #message {
     position: fixed;
     font-family: Courier New;
