@@ -1,12 +1,23 @@
 <!DOCTYPE html>
 <html>
-    <head>        
+    <head>
+        <title>balljs</title>
+        <meta name="author" content="Nicolas Dutertry">
         <link rel="stylesheet" type="text/css" href="css/balljs.css"/>
         <script type="application/x-javascript" src="js/jquery-1.7.1.min.js"></script>
         <script type="application/x-javascript" src="js/jquery.mobile-1.4.5.min.js"></script>
         <script type="application/x-javascript" src="js/balljs.js"></script>
     </head>
     <body>
-        <div id="main"/>
+        <div id="main">
+            <div id="header">
+                <img src="images/reload.png" id="reload" title="Reload"/>
+                <span id="score"></span>
+            </div>
+            <canvas id='canvas-background'></canvas>
+            <canvas id='canvas-blocks'></canvas>
+            <canvas id='canvas-balls'></canvas>
+            <div id="message"></div>
+        </div>
     </body>
  </html>

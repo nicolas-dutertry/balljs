@@ -1,60 +1,68 @@
-$(function () {
-    
-    const documentWidth = $(document).width();
-    const documentHeight = $(document).height();
-    
-    const ratio1 = $(document).width() / 550;
-    const ratio2 = $(document).height() / 820;
-    const ratio = (ratio1 > ratio2) ? ratio2 : ratio1;
+$(function () {	
+	loadGame();
+});
 
-    const ballradius = 9*ratio;
-    const blocklength = 58*ratio;
-    const blockspace = 12*ratio;
-    const blockperrow = 7;
-    const blockpercol = 8;
-    const speed = 700*ratio;
-    const width = 500*ratio;
-    const height = 710*ratio;
-    const left = documentWidth/2-width/2;
-    const fontSize = Math.floor(20*ratio);
+function loadGame() {
+    var documentWidth = $(document).width();
+    var documentHeight = $(document).height();
     
-    const blocks = new Array();
-    const balls = new Array();
+    var ratio1 = $(document).width() / 550;
+    var ratio2 = $(document).height() / 820;
+    var ratio = (ratio1 > ratio2) ? ratio2 : ratio1;
+
+    var ballradius = 9*ratio;
+    var blocklength = 58*ratio;
+    var blockspace = 12*ratio;
+    var blockperrow = 7;
+    var blockpercol = 8;
+    var speed = 700*ratio;
+    var width = 500*ratio;
+    var height = 710*ratio;
+    var left = documentWidth/2-width/2;
+    var fontSize = Math.floor(20*ratio);
+    
+    var blocks = new Array();
+    var balls = new Array();
     
     $("#main").width(width);
     $("#main").height(documentHeight);
     $("#main").offset({top: 0, left: left});
     
-    const scoreDiv = $("<div id='score'></div>");
-    scoreDiv.css("font-size", fontSize*2 + "px");
-    scoreDiv.offset({top: 0, left: left});
-    scoreDiv.width(width);
+    var headerDiv = $("#header");
+    headerDiv.css("font-size", fontSize*2 + "px");
+    headerDiv.offset({top: 0, left: left});
+    headerDiv.width(width);
+    var scoreDiv = $("#score");
     scoreDiv.html("&nbsp;");
-    $("#main").append(scoreDiv);
     
-    $("#main").append($("<canvas id='canvas-background' width='" + width + "' height='" + height + "'></canvas>"));
-    $("#main").append($("<canvas id='canvas-blocks' width='" + width + "' height='" + height + "'></canvas>"));
-    $("#main").append($("<canvas id='canvas-balls' width='" + width + "' height='" + height + "'></canvas>"));
-    $("canvas").offset({top: scoreDiv.height(), left: left});
+    var reloadImg = $("#reload");
+    var reloadPos = scoreDiv.height()/2-fontSize;
+    reloadImg.offset({top: reloadPos, left: left+reloadPos});
+    reloadImg.width(fontSize*2);
+    reloadImg.height(fontSize*2);
     
-    const messageDiv = $("<div id='message'></div>");
+    $("canvas").attr("width", width);
+    $("canvas").attr("height", height);
+    $("canvas").offset({top: headerDiv.height(), left: left});
+    
+    var messageDiv = $("#message");
     messageDiv.css("font-size", fontSize*2 + "px");
-    messageDiv.offset({top: scoreDiv.height()+height, left: left});
+    messageDiv.offset({top: headerDiv.height()+height, left: left});
     messageDiv.width(width);
-    messageDiv.html("&nbsp;");
-    $("#main").append(messageDiv);
+    messageDiv.html("&nbsp;");    
     
-    
-    const canvasBackground = document.getElementById("canvas-background");
-    const ctxBackground = canvasBackground.getContext("2d");
+    var canvasBackground = document.getElementById("canvas-background");
+    var ctxBackground = canvasBackground.getContext("2d");
     ctxBackground.fillStyle = "rgb(0,0,0)";
     ctxBackground.fillRect(0, 0, canvasBackground.width, canvasBackground.height);
     
-    const canvasBlocks = document.getElementById("canvas-blocks");
-    const ctxBlocks = canvasBlocks.getContext("2d");
+    var canvasBlocks = document.getElementById("canvas-blocks");
+    var ctxBlocks = canvasBlocks.getContext("2d");
+    ctxBlocks.clearRect(0, 0, ctxBlocks.width, ctxBlocks.height);
     
-    const canvasBalls = document.getElementById("canvas-balls");
-    const ctxBalls = canvasBalls.getContext("2d");
+    var canvasBalls = document.getElementById("canvas-balls");
+    var ctxBalls = canvasBalls.getContext("2d");
+    ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
     
     var launchx = width / 2;    
     var level = 0;    
@@ -63,10 +71,9 @@ $(function () {
     var gameover = false;
 
     class Block {
-        constructor(x, y, length, counter) {
+        constructor(x, y, counter) {
             this.x = x;
             this.y = y;
-            this.length = length;
             this.counter = counter;
             this.dirty = true;
         }
@@ -76,7 +83,7 @@ $(function () {
 			this.counter--;
 			
 			if(this.counter <= 0) {
-				ctxBlocks.clearRect(this.x-1, this.y-1, this.length+2, this.length+2);
+				ctxBlocks.clearRect(this.x-1, this.y-1, blocklength+2, blocklength+2);
 				return false;
 			}
 			
@@ -85,7 +92,7 @@ $(function () {
 		
 		moveDown() {
 			this.dirty = true;
-			ctxBlocks.clearRect(this.x-1, this.y-1, this.length+2, this.length+2);
+			ctxBlocks.clearRect(this.x-1, this.y-1, blocklength+2, blocklength+2);
 			this.y += blocklength + blockspace;
 		}
 
@@ -94,22 +101,21 @@ $(function () {
 				var hue = 0.1 + this.counter/50;
 				var rgb = hsv2rgb(hue, 1, 1);
 				ctxBlocks.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
-				ctxBlocks.fillRect(this.x, this.y, this.length, this.length);
+				ctxBlocks.fillRect(this.x, this.y, blocklength, blocklength);
 				ctxBlocks.font = "bold " + fontSize + "px Courier";
 				ctxBlocks.fillStyle = "rgb(0,0,0)";
 				let text = "" + this.counter;
 				let metric = ctxBlocks.measureText(text);
-				ctxBlocks.fillText(text, this.x + this.length/2 - metric.width/2, this.y + this.length/2 + fontSize/2);
+				ctxBlocks.fillText(text, this.x + blocklength/2 - metric.width/2, this.y + blocklength/2 + fontSize/2);
 			}
         }
     }
 
     class Ball {
-        constructor(starttime, x, y, radius, speedx, speedy) {
+        constructor(starttime, x, y, speedx, speedy) {
             this.starttime = starttime;
             this.x = x;
             this.y = y;
-            this.radius = radius;
             this.speedx = speedx;
             this.speedy = speedy;
             this.computeCollisionTime();
@@ -123,20 +129,20 @@ $(function () {
             var collisionXTime;
             var collisionXType;
             if (this.speedx > 0) {
-                collisionXTime = (width - this.radius - this.x) * 1000 / this.speedx + this.starttime;
+                collisionXTime = (width - ballradius - this.x) * 1000 / this.speedx + this.starttime;
                 collisionXType = "right";
             } else if (this.speedx < 0) {
-                collisionXTime = (this.radius - this.x) * 1000 / this.speedx + this.starttime;
+                collisionXTime = (ballradius - this.x) * 1000 / this.speedx + this.starttime;
                 collisionXType = "left";
             }
 
             var collisionYTime;
             var collisionYType;
             if (this.speedy > 0) {
-                collisionYTime = (height - this.radius - this.y) * 1000 / this.speedy + this.starttime;
+                collisionYTime = (height - ballradius - this.y) * 1000 / this.speedy + this.starttime;
                 collisionYType = "bottom";
             } else if (this.speedy < 0) {
-                collisionYTime = (this.radius - this.y) * 1000 / this.speedy + this.starttime;
+                collisionYTime = (ballradius - this.y) * 1000 / this.speedy + this.starttime;
                 collisionYType = "top";
             }
 
@@ -152,17 +158,17 @@ $(function () {
                 let block = blocks[i];
 
                 if (this.speedx > 0) {
-                    let potentialTime = (block.x - this.radius - this.x) * 1000 / this.speedx + this.starttime;
+                    let potentialTime = (block.x - ballradius - this.x) * 1000 / this.speedx + this.starttime;
                     let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - this.radius && potentialY < block.y + block.length + this.radius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
                         this.collisionTime = potentialTime;
                         this.collisionType = "right";
                         this.collisionBlock = block;
                     }
                 } else if (this.speedx < 0) {
-                    let potentialTime = (block.x + block.length + this.radius - this.x) * 1000 / this.speedx + this.starttime;
+                    let potentialTime = (block.x + blocklength + ballradius - this.x) * 1000 / this.speedx + this.starttime;
                     let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - this.radius && potentialY < block.y + block.length + this.radius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
                         this.collisionTime = potentialTime;
                         this.collisionType = "left";
                         this.collisionBlock = block;
@@ -170,17 +176,17 @@ $(function () {
                 }
 
                 if (this.speedy > 0) {
-                    let potentialTime = (block.y - this.radius - this.y) * 1000 / this.speedy + this.starttime;
+                    let potentialTime = (block.y - ballradius - this.y) * 1000 / this.speedy + this.starttime;
                     let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - this.radius && potentialX < block.x + block.length + this.radius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
                         this.collisionTime = potentialTime;
                         this.collisionType = "bottom";
                         this.collisionBlock = block;
                     }
                 } else if (this.speedy < 0) {
-                    let potentialTime = (block.y + block.length + this.radius - this.y) * 1000 / this.speedy + this.starttime;
+                    let potentialTime = (block.y + blocklength + ballradius - this.y) * 1000 / this.speedy + this.starttime;
                     let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - this.radius && potentialX < block.x + block.length + this.radius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
                         this.collisionTime = potentialTime;
                         this.collisionType = "top";
                         this.collisionBlock = block;
@@ -212,14 +218,14 @@ $(function () {
 
         draw(time) {
 			var newy = this.y + this.speedy * (time - this.starttime) / 1000;
-			if(newy > height - this.radius) {
+			if(newy > height - ballradius) {
 				return;
 			}
             var newx = this.x + this.speedx * (time - this.starttime) / 1000;
             
             ctxBalls.fillStyle = "rgb(255,255,255)";
             ctxBalls.beginPath();
-            ctxBalls.arc(newx, newy, this.radius, 0, Math.PI * 2, true);
+            ctxBalls.arc(newx, newy, ballradius, 0, Math.PI * 2, true);
             ctxBalls.fill();
         }
     }
@@ -231,7 +237,7 @@ $(function () {
         var speedy = y * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var currentTime = Date.now();
         for (var i = 0; i < level; i++) {
-            balls.push(new Ball(currentTime + i * 80, launchx, height - ballradius, ballradius, speedx, speedy));
+            balls.push(new Ball(currentTime + i * 80, launchx, height - ballradius, speedx, speedy));
         }
 
         launchx = null;
@@ -253,7 +259,7 @@ $(function () {
                 if (Math.random() < 0.5) {
                     counter = 2*level;
                 }
-                blocks.push(new Block(blockspace + (blockspace+blocklength)*i, blockspace + blocklength, blocklength, counter));
+                blocks.push(new Block(blockspace + (blockspace+blocklength)*i, blockspace + blocklength, counter));
             }
         }
         
@@ -276,58 +282,11 @@ $(function () {
         };
     }
 
-    function startDrawing() {
-        $("#canvas-balls").on("vmousedown", function (evt) {
-            if (balls.length === 0 && !gameover) {
-                touchPos = getMousePos(evt);
-            }
-        });
-        
-        $("#canvas-balls").on("vmousemove", function (evt) {            
-            if (balls.length === 0 && touchPos !== null) {
-				let mousePos = getMousePos(evt);
-				let y = height-ballradius+touchPos.y-mousePos.y;
-				
-				if(y < height-2*ballradius) {
-					let x = launchx+touchPos.x-mousePos.x;					
-					
-					launchTarget = {
-						x: x,
-						y: y
-					}
-				} else {
-					launchTarget = null;
-				}
-            }
-        });
-        
-        $("#canvas-balls").on("vmouseout", function (evt) {
-            launchTarget = null;
-            touchPos = null;
-        });
-        
-        $("#canvas-balls").on("vmouseup", function (evt) {
-            if (balls.length === 0 && launchTarget !== null) {
-                let mousePos = getMousePos(evt);
-				
-				let y = height-ballradius+touchPos.y-mousePos.y;
-				let x = launchx+touchPos.x-mousePos.x;
-				
-                launchTarget = {
-					x: x,
-					y: y
-				}
-				
-                shoot(launchTarget.x, launchTarget.y);
-            }            
-            launchTarget = null;
-            touchPos = null;
-        });
-
-        drawStep();
-    }
-
-    function drawStep() {
+    function drawAll() {
+    	if(gameover) {
+    		return;
+    	}
+    	
 		ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
 
         var currentTime = Date.now();
@@ -402,12 +361,67 @@ $(function () {
         }
 
         if (!gameover) {
-            requestAnimationFrame(drawStep);
+            requestAnimationFrame(drawAll);
         }
     }
 
-    startDrawing();
-});
+    $("#canvas-balls").off();
+    
+    $("#canvas-balls").on("vmousedown", function (evt) {
+        if (balls.length === 0 && !gameover) {
+            touchPos = getMousePos(evt);
+        }
+    });
+    
+    $("#canvas-balls").on("vmousemove", function (evt) {            
+        if (balls.length === 0 && touchPos !== null) {
+			let mousePos = getMousePos(evt);
+			let y = height-ballradius+touchPos.y-mousePos.y;
+			
+			if(y < height-2*ballradius) {
+				let x = launchx+touchPos.x-mousePos.x;					
+				
+				launchTarget = {
+					x: x,
+					y: y
+				}
+			} else {
+				launchTarget = null;
+			}
+        }
+    });
+    
+    $("#canvas-balls").on("vmouseout", function (evt) {
+        launchTarget = null;
+        touchPos = null;
+    });
+    
+    $("#canvas-balls").on("vmouseup", function (evt) {
+        if (balls.length === 0 && launchTarget !== null) {
+            let mousePos = getMousePos(evt);
+			
+			let y = height-ballradius+touchPos.y-mousePos.y;
+			let x = launchx+touchPos.x-mousePos.x;
+			
+            launchTarget = {
+				x: x,
+				y: y
+			}
+			
+            shoot(launchTarget.x, launchTarget.y);
+        }            
+        launchTarget = null;
+        touchPos = null;
+    });
+    
+    $("#reload").off();
+    $("#reload").click(function() {
+    	gameover = true;
+    	loadGame();
+    });
+
+    drawAll();
+}
 
 function hsv2rgb(h, s, v) {
     var r, g, b;

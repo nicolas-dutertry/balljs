@@ -30,7 +30,7 @@ canvas {
     z-index: 3;
 }
 
-#score {
+#header {
     position: fixed;
     font-family: Tahoma;
     background-color: #222222;    
@@ -38,9 +38,14 @@ canvas {
     text-align: center;
 }
 
+#reload {
+	position: fixed;
+	cursor: pointer;
+}
+
 #message {
     position: fixed;
-    font-family: Tahoma;
+    font-family: Courier New;
     background-color: #000000;    
     color: red;
     text-align: center;
