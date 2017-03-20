@@ -42,12 +42,12 @@ function loadGame() {
     reloadImg.height(fontSize*2);
     
     $("canvas").attr("width", width);
-    $("canvas").attr("height", height);
+    $("canvas").attr("height", height+2);
     $("canvas").offset({top: headerDiv.height(), left: left});
     
     var messageDiv = $("#message");
     messageDiv.css("font-size", fontSize*2 + "px");
-    messageDiv.offset({top: headerDiv.height()+height, left: left});
+    messageDiv.offset({top: headerDiv.height()+height+2, left: left});
     messageDiv.width(width);
     messageDiv.html("&nbsp;");    
     

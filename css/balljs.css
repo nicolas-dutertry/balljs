@@ -10,7 +10,7 @@ body {
 #main {
     display: block;
     position: fixed;
-    background-color: #000000;
+    background-color: #222222;
 }
 
 canvas {
@@ -46,7 +46,7 @@ canvas {
 #message {
     position: fixed;
     font-family: Courier New;
-    background-color: #000000;    
+    background-color: #222222;    
     color: red;
     text-align: center;
 }
