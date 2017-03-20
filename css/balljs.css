@@ -48,10 +48,23 @@ canvas {
     display: block;
 }
 
-#message {
-    position: fixed;
-    font-family: Courier New;
-    background-color: #222222;    
-    color: red;
+#game-over {
+	position: fixed;
     text-align: center;
+    background-color: rgb(211,10,15);
+    color: #FFFFFF;
+    z-index: 0;
+}
+
+#about {
+    position: fixed;
+    display: block;
+    text-align: right;
+    color: #FFFFFF;
+    font-family: Tahoma;
+    font-style: italic;
+}
+
+#about a, #about a:HOVER, #about a:VISITED {
+	color: #FFFFFF;
 }

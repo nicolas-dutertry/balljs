@@ -52,11 +52,17 @@ function loadGame() {
     $("canvas").attr("height", height+2);
     $("canvas").offset({top: headerDiv.height(), left: left});
     
-    var messageDiv = $("#message");
-    messageDiv.css("font-size", fontSize*2 + "px");
-    messageDiv.offset({top: headerDiv.height()+height+2, left: left});
-    messageDiv.width(width);
-    messageDiv.html("&nbsp;");    
+    var gameOverDiv = $("#game-over");
+    gameOverDiv.css("font-size", fontSize*2 + "px");
+    gameOverDiv.css("border-radius", fontSize + "px");    
+    gameOverDiv.offset({top: height/2, left: left+0.05*width});
+    gameOverDiv.width(0.9*width);
+    gameOverDiv.css("z-index", "0");
+    
+    var aboutDiv = $("#about");
+    aboutDiv.css("font-size", Math.floor(0.8*fontSize) + "px");
+    aboutDiv.width(width-fontSize/2);
+    aboutDiv.offset({top: documentHeight-aboutDiv.height()-fontSize/2, left: left});    
     
     var canvasBackground = document.getElementById("canvas-background");
     var ctxBackground = canvasBackground.getContext("2d");
@@ -285,7 +291,7 @@ function loadGame() {
         			localStorage.bestScore = bestScore;
         		}
         	}
-            messageDiv.html("Game over");
+            gameOverDiv.css("z-index", "4");
             
         } else {
         	scoreDiv.html("" + level);
