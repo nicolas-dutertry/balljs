@@ -259,8 +259,10 @@ function loadGame() {
     }
 
     function nextLevel() {
-        level++;
+        // Increment level
+    	level++;
         
+    	// Move each existing block down
         for (let i = 0; i < blocks.length; i++) {
             blocks[i].moveDown();
             if(blocks[i].y > blockspace + (blocklength+blockspace)*blockpercol) {
@@ -268,14 +270,23 @@ function loadGame() {
             }
         }
 
-        for (let i = 0; i < blockperrow; i++) {
-            if (Math.random() < 3.5 / 7) {
-                let counter = level;
-                if (Math.random() < 0.5) {
-                    counter = 2*level;
-                }
-                blocks.push(new Block(blockspace + (blockspace+blocklength)*i, blockspace + blocklength, counter));
+        // Compute new block count
+        var newBlockCount = 1 + Math.floor(Math.random()*(blockperrow-2));
+        var availablePos = new Array();
+        for(let i = 0; i < blockperrow; i++) {
+        	availablePos.push(i);
+        }
+        
+        // Position new blocks randomly on first line
+        for (let i = 0; i < newBlockCount; i++) {
+        	let counter = level;
+            if (Math.random() < 0.5) {
+                counter = 2*level;
             }
+            let posIndex =  Math.floor(Math.random()*availablePos.length);
+            let pos = availablePos[posIndex];
+            availablePos.splice(posIndex, 1);
+            blocks.push(new Block(blockspace + (blockspace+blocklength)*pos, blockspace + blocklength, counter));
         }
         
         
