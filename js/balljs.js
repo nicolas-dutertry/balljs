@@ -10,12 +10,13 @@ function loadGame() {
     var ratio2 = $(document).height() / 820;
     var ratio = (ratio1 > ratio2) ? ratio2 : ratio1;
 
-    var ballradius = 9*ratio;
-    var blocklength = 58*ratio;
-    var blockspace = 12*ratio;
+    var ballradius = 10*ratio;
+    var blocklength = 60*ratio;
+    var blockspace = 10*ratio;
+    var blockFontSize = Math.floor(25*ratio);
     var blockperrow = 7;
     var blockpercol = 8;
-    var speed = 700*ratio;
+    var speed = 600*ratio;
     var width = 500*ratio;
     var height = 710*ratio;
     var left = documentWidth/2-width/2;
@@ -115,7 +116,7 @@ function loadGame() {
 				var rgb = hsv2rgb(hue, 1, 1);
 				ctxBlocks.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
 				ctxBlocks.fillRect(this.x, this.y, blocklength, blocklength);
-				ctxBlocks.font = "bold " + fontSize + "px Courier";
+				ctxBlocks.font = "bold " + blockFontSize + "px Courier";
 				ctxBlocks.fillStyle = "rgb(0,0,0)";
 				let text = "" + this.counter;
 				let metric = ctxBlocks.measureText(text);
@@ -251,7 +252,7 @@ function loadGame() {
         var currentTime = Date.now();
         var ballCount = level <= 1 ? 1 : level-1;        
         for (var i = 0; i < ballCount; i++) {
-            balls.push(new Ball(currentTime + i * 80, launchx, height - ballradius, speedx, speedy));
+            balls.push(new Ball(currentTime + i * 90, launchx, height - ballradius, speedx, speedy));
         }
 
         launchx = null;
@@ -315,8 +316,6 @@ function loadGame() {
     	if(gameover) {
     		return;
     	}
-    	
-		ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
 
         var currentTime = Date.now();
         let changeLevel = false;
@@ -359,6 +358,8 @@ function loadGame() {
                 break;
             }
         }
+        
+        ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
 
         if (level === 0 || changeLevel) {
             nextLevel();
