@@ -160,16 +160,16 @@ function loadGame() {
     			let extradius = ballradius + Math.floor(ballradius*((Math.cos(time/100)/4)+1));
 	    		
 	    		if(extradius !== this.extradius) {
-	    			this.clear();	    		
+	    			this.clear();	    	
+	    			
+	    			ctxBlocks.save();
+		    		ctxBlocks.strokeStyle = "rgb(255,255,255)";
+		    		ctxBlocks.lineWidth = 4*ratio;
+		    		ctxBlocks.beginPath();
+		    		ctxBlocks.arc(this.x, this.y, extradius-2*ratio, 0, Math.PI * 2, true);
+		    		ctxBlocks.stroke();
+		    		ctxBlocks.restore();
 		    		
-		    		ctxBlocks.fillStyle = "rgb(255,255,255)";
-		    		ctxBlocks.beginPath();
-		    		ctxBlocks.arc(this.x, this.y, extradius+2, 0, Math.PI * 2, true);
-		    		ctxBlocks.fill();
-		    		ctxBlocks.fillStyle = "rgb(0,0,0)";
-		    		ctxBlocks.beginPath();
-		    		ctxBlocks.arc(this.x, this.y, extradius, 0, Math.PI * 2, true);
-		    		ctxBlocks.fill();
 		    		ctxBlocks.fillStyle = "rgb(255,255,255)";	    		
 		    		ctxBlocks.beginPath();
 		    		ctxBlocks.arc(this.x, this.y, ballradius, 0, Math.PI * 2, true);
@@ -188,10 +188,16 @@ function loadGame() {
             this.y = y;
             this.speedx = speedx;
             this.speedy = speedy;
+            this.launched = false;
+            this.deleted = false;
             this.computeCollisionTime();
         }
 
         computeCollisionTime() {
+        	if(this.deleted) {
+        		return;
+        	}
+        	
             this.collisionTime = null;
             this.collisionType = null;
             this.collisionBlock = null;
@@ -302,8 +308,12 @@ function loadGame() {
         draw(time) {
 			var newy = this.y + this.speedy * (time - this.starttime) / 1000;
 			if(newy > height - ballradius) {
+				if(this.launched) {
+					this.deleted = true;
+				}
 				return;
 			}
+			this.launched = true;
             var newx = this.x + this.speedx * (time - this.starttime) / 1000;
             
             ctxBalls.fillStyle = "rgb(255,255,255)";
