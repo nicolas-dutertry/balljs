@@ -190,6 +190,12 @@ function loadGame() {
             this.speedy = speedy;
             this.launched = false;
             this.deleted = false;
+            this.checkInfinite = false;
+            this.collisionTime = null;
+            this.collisionType = null;
+            this.collisionBlock = null;
+            this.collisionSpeedx = null;
+            this.collisionSpeedy = null;
             this.computeCollisionTime();
         }
 
@@ -406,15 +412,30 @@ function loadGame() {
             this.x = this.x + this.speedx * (this.collisionTime - this.starttime) / 1000;
             this.y = this.y + this.speedy * (this.collisionTime - this.starttime) / 1000;
             this.starttime = this.collisionTime;
-
+            
             this.speedx = this.collisionSpeedx;
             this.speedy = this.collisionSpeedy;
+            
+            // Infinite rebound prevention
+            if(this.checkInfinite && this.collisionBlock === null && this.speedy > -10*ratio && this.speedy < 10*ratio) {
+            	this.speedy = 20*ratio;
+            	if(this.speedx > 0) {
+            		this.speedx = Math.sqrt(speed*speed-400*ratio);
+            	} else {
+            		this.speedx = -Math.sqrt(speed*speed-400*ratio);
+            	}
+            }
+            this.horizontal = false;
 
             if (this.collisionBlock !== null) {                
                 if (!this.collisionBlock.decrease()) {
                     let index = blocks.indexOf(this.collisionBlock);
                     blocks.splice(index, 1);
                 }
+            } else {
+            	if(this.speedy > -10*ratio && this.speedy < 10*ratio) {
+            		this.checkInfinite = true;
+            	}
             }
 
             return this.collisionBlock !== null || this.collisionType !== "bottom";
