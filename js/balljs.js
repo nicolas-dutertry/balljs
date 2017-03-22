@@ -201,6 +201,8 @@ function loadGame() {
             this.collisionTime = null;
             this.collisionType = null;
             this.collisionBlock = null;
+            this.collisionSpeedx = null;
+            this.collisionSpeedy = null;
 
             var collisionXTime;
             var collisionXType;
@@ -225,29 +227,62 @@ function loadGame() {
             if (collisionYTime > collisionXTime) {
                 this.collisionTime = collisionXTime;
                 this.collisionType = collisionXType;
+                this.collisionSpeedx = -this.speedx;
+                this.collisionSpeedy = this.speedy;
             } else {
                 this.collisionTime = collisionYTime;
                 this.collisionType = collisionYType;
+                this.collisionSpeedx = this.speedx;
+                this.collisionSpeedy = -this.speedy;
             }
 
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i];
+                let potentialCorner = null;
 
                 if (this.speedx > 0) {
                     let potentialTime = (block.x - ballradius - this.x) * 1000 / this.speedx + this.starttime;
                     let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
                     if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
-                        this.collisionTime = potentialTime;
-                        this.collisionType = "right";
-                        this.collisionBlock = block;
+                        if(potentialY < block.y) {
+                        	potentialCorner = {
+                        		x: block.x,
+                        		y: block.y
+                        	};
+                        } else if(potentialY > block.y+blocklength) {
+                        	potentialCorner = {
+                            		x: block.x,
+                            		y: block.y+blocklength
+                            	};
+                        } else {
+	                    	this.collisionTime = potentialTime;
+	                        this.collisionType = "right";
+	                        this.collisionBlock = block;
+	                        this.collisionSpeedx = -this.speedx;
+	                        this.collisionSpeedy = this.speedy;
+                        }
                     }
                 } else if (this.speedx < 0) {
                     let potentialTime = (block.x + blocklength + ballradius - this.x) * 1000 / this.speedx + this.starttime;
                     let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
                     if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
-                        this.collisionTime = potentialTime;
-                        this.collisionType = "left";
-                        this.collisionBlock = block;
+                    	if(potentialY < block.y) {
+                        	potentialCorner = {
+                        		x: block.x+blocklength,
+                        		y: block.y
+                        	};
+                        } else if(potentialY > block.y+blocklength) {
+                        	potentialCorner = {
+                            		x: block.x+blocklength,
+                            		y: block.y+blocklength
+                            	};
+                        } else {
+	                    	this.collisionTime = potentialTime;
+	                        this.collisionType = "left";
+	                        this.collisionBlock = block;
+	                        this.collisionSpeedx = -this.speedx;
+	                        this.collisionSpeedy = this.speedy;
+                        }
                     }
                 }
 
@@ -255,18 +290,101 @@ function loadGame() {
                     let potentialTime = (block.y - ballradius - this.y) * 1000 / this.speedy + this.starttime;
                     let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
                     if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
-                        this.collisionTime = potentialTime;
-                        this.collisionType = "bottom";
-                        this.collisionBlock = block;
+                    	if(potentialX < block.x) {
+                        	potentialCorner = {
+                        		x: block.x,
+                        		y: block.y
+                        	};
+                        } else if(potentialX > block.x+blocklength) {
+                        	potentialCorner = {
+                            		x: block.x+blocklength,
+                            		y: block.y
+                            	};
+                        } else {
+                        	this.collisionTime = potentialTime;
+	                        this.collisionType = "bottom";
+	                        this.collisionBlock = block;
+	                        this.collisionSpeedx = this.speedx;
+	                        this.collisionSpeedy = -this.speedy;
+                        }
                     }
                 } else if (this.speedy < 0) {
                     let potentialTime = (block.y + blocklength + ballradius - this.y) * 1000 / this.speedy + this.starttime;
                     let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
                     if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
-                        this.collisionTime = potentialTime;
-                        this.collisionType = "top";
-                        this.collisionBlock = block;
+                    	if(potentialX < block.x) {
+                        	potentialCorner = {
+                        		x: block.x,
+                        		y: block.y+blocklength
+                        	};
+                        } else if(potentialX > block.x+blocklength) {
+                        	potentialCorner = {
+                            		x: block.x+blocklength,
+                            		y: block.y+blocklength
+                            	};
+                        } else {
+	                        this.collisionTime = potentialTime;
+	                        this.collisionType = "top";
+	                        this.collisionBlock = block;
+	                        this.collisionSpeedx = this.speedx;
+	                        this.collisionSpeedy = -this.speedy;
+                        }
                     }
+                }
+                
+                if(potentialCorner !== null) {
+                	let potentialTime = this.getCollisionTime(potentialCorner.x, potentialCorner.y, ballradius);
+                	if(potentialTime !== null && potentialTime >= this.starttime && potentialTime < this.collisionTime) {
+                		let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
+                		let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
+                		
+                		/*
+                		 * collision angle : theta
+                		 * cos(theta) = (cornerX-potentialX)/ballradius
+                		 * sin(theta) = (cornerY-potentialY)/ballradius
+                		 * 
+                		 * speed angle : alpha
+                		 * cos(alpha) = speedX/speed
+                		 * sin(alpha) = speedY/speed
+                		 * 
+                		 * new speed angle = beta = alpha+PI-2*theta
+                		 * cos(beta) = newspeedX/speed
+                		 * sin(beta) = newspeedY/speed
+                		 * 
+                		 * cos(beta) = cos(PI + alpha - 2*theta) = -cos(alpha - 2*theta)
+                		 *           = - [ cos(alpha)*cos(-2*theta) - sin(alpha)*sin(-2*theta) ]
+                		 *           = - [ cos(alpha)*cos(2*theta) + sin(alpha)*sin(2*theta) ]
+                		 *           = - [ cos(alpha)*(2*cos(theta)^2-1) + 2*sin(alpha)*sin(theta)*cos(theta) ]
+                		 * 
+                		 * sin(beta) = sin(PI + alpha - 2*theta) = -sin(alpha - 2*theta)
+                		 *           = - [ sin(alpha)*cos(2*theta) - cos(alpha)*sin(2*theta) ]
+                		 *           = - [ sin(alpha)*(2*cos(theta)^2-1) - 2*cos(alpha)*sin(theta)*cos(theta) ]
+                		 */
+                		
+                		/*
+                		let costheta = (potentialX-potentialCorner.x)/ballradius;                		
+                		let sintheta = (potentialY-potentialCorner.y)/ballradius;
+                		
+                		this.collisionTime = potentialTime;
+                        this.collisionBlock = block;
+                        this.collisionSpeedx = this.speedx-2*this.speedx*Math.pow(costheta,2) + 2*this.speedy*sintheta*costheta;
+                        this.collisionSpeedy = this.speedy-2*this.speedy*Math.pow(costheta,2) - 2*this.speedx*sintheta*costheta;
+                        */
+                		
+                		let nx = potentialX - potentialCorner.x;
+                		let ny = potentialY - potentialCorner.y;
+                		let length = ballradius;//Math.sqrt(nx * nx + ny * ny);
+                		nx /= length;
+                		ny /= length;
+                		
+                		let projection = this.speedx * nx + this.speedy * ny;
+                		
+                		this.collisionTime = potentialTime;
+                        this.collisionBlock = block;
+                        this.collisionSpeedx = this.speedx - 2 * projection * nx;
+                        this.collisionSpeedy = this.speedy - 2 * projection * ny;
+
+                	}
                 }
             }
             
@@ -289,11 +407,8 @@ function loadGame() {
             this.y = this.y + this.speedy * (this.collisionTime - this.starttime) / 1000;
             this.starttime = this.collisionTime;
 
-            if (this.collisionType === "right" || this.collisionType === "left") {
-                this.speedx = -this.speedx;
-            } else {
-                this.speedy = -this.speedy;
-            }
+            this.speedx = this.collisionSpeedx;
+            this.speedy = this.collisionSpeedy;
 
             if (this.collisionBlock !== null) {                
                 if (!this.collisionBlock.decrease()) {
@@ -313,7 +428,9 @@ function loadGame() {
 				}
 				return;
 			}
+			
 			this.launched = true;
+			
             var newx = this.x + this.speedx * (time - this.starttime) / 1000;
             
             ctxBalls.fillStyle = "rgb(255,255,255)";
