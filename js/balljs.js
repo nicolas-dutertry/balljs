@@ -33,7 +33,7 @@ function loadGame() {
     var ballradius = 10*ratio;
     var blocklength = 60*ratio;
     var blockspace = 10*ratio;
-    var blockFontSize = Math.floor(25*ratio);
+    var blockFontSize = Math.floor(25*ratio);    
     var blockperrow = 7;
     var blockpercol = 8;
     var speed = 600*ratio;
@@ -41,6 +41,7 @@ function loadGame() {
     var height = 710*ratio;
     var left = documentWidth/2-width/2;
     var fontSize = Math.floor(20*ratio);
+    var launcherFontSize = Math.floor(18*ratio);
     
     var blocks = new Array();
     var extraballs = new Array();
@@ -99,7 +100,8 @@ function loadGame() {
     var ctxBalls = canvasBalls.getContext("2d");
     ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
     
-    var launchx = width / 2;    
+    var launchx;
+    var nextLaunchx = width / 2;
     var level = 0;    
     var ballCount = 1;
     var launchTarget = null;
@@ -522,13 +524,16 @@ function loadGame() {
         for (var i = 0; i < ballCount; i++) {
             balls.push(new Ball(currentTime + i * 90, launchx, height - ballradius, speedx, speedy));
         }
-
-        launchx = null;
+        
+        nextLaunchx = null;
     }
 
     function nextLevel() {
         // Increment level
     	level++;
+    	
+    	launchx = nextLaunchx;
+    	nextLaunchx = null;
         
     	// Move each existing block down
         for (let i = 0; i < blocks.length; i++) {
@@ -638,8 +643,8 @@ function loadGame() {
                         let index = balls.indexOf(collisionBalls[i]);
                         balls.splice(index, 1);
                         // The first removed ball will be the next launcher start point
-                        if (launchx === null) {
-                            launchx = collisionBalls[i].x;
+                        if (nextLaunchx === null) {
+                        	nextLaunchx = collisionBalls[i].x;
                         }
                     }
                 }
@@ -694,9 +699,34 @@ function loadGame() {
 
         // Draw launcher start point
         if (launchx !== null) {
-            ctxBalls.beginPath();
+			let launchCount = ballCount;
+			if(balls.length > 0) {
+				launchCount = 0;
+				for (let i = 0; i < balls.length; i++) {
+					if(!balls[i].launched) {
+						launchCount++;
+					}
+				}
+			}
+			if(launchCount > 0) {
+				ctxBalls.beginPath();
+	            ctxBalls.fillStyle = "rgb(255,255,255)";
+	            ctxBalls.arc(launchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
+	            ctxBalls.fill();
+	            
+	            ctxBalls.font = launcherFontSize + "px Courier";
+	            let text = "x" + launchCount;
+				let metric = ctxBalls.measureText(text);
+				ctxBalls.fillText(text, launchx - metric.width, height-ballradius*3);
+			} else {
+				launchx = null;
+			}
+        }
+        
+        if (nextLaunchx !== null) {
+        	ctxBalls.beginPath();
             ctxBalls.fillStyle = "rgb(255,255,255)";
-            ctxBalls.arc(launchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
+            ctxBalls.arc(nextLaunchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
             ctxBalls.fill();
         }
 
