@@ -442,38 +442,46 @@ function loadGame() {
 
         var currentTime = Date.now();
         let changeLevel = false;
+        
+        // Check collisions since previous frame 
         while (true) {
-            let nextCollisionBalls = null;
-            let nextCollisionTime = null;
+            let collisionBalls = null;
+            let collisionTime = null;
+            // Check the first collision occurred since previous frame
             for (let i = 0; i < balls.length; i++) {
                 let ball = balls[i];
                 if (ball.collisionTime !== null && ball.collisionTime <= currentTime) {
-                    if (nextCollisionTime === null || ball.collisionTime < nextCollisionTime) {
-                        nextCollisionBalls = new Array();
-                        nextCollisionTime = ball.collisionTime;
+                    if (collisionTime === null || ball.collisionTime < collisionTime) {
+                        collisionBalls = new Array();
+                        collisionTime = ball.collisionTime;
                     }
 
-                    if (ball.collisionTime <= nextCollisionTime) {
-                        nextCollisionBalls.push(ball);
+                    if (ball.collisionTime <= collisionTime) {
+                        collisionBalls.push(ball);
                     }
                 }
             }
 
-            if (nextCollisionBalls !== null) {
-                for (let i = 0; i < nextCollisionBalls.length; i++) {
-                    if (!nextCollisionBalls[i].processCollision()) {
-                        let index = balls.indexOf(nextCollisionBalls[i]);
+            // Process collisions
+            if (collisionBalls !== null) {
+                for (let i = 0; i < collisionBalls.length; i++) {
+                    if (!collisionBalls[i].processCollision()) {
+                    	// Remove the ball since it's a collision with bottom
+                        let index = balls.indexOf(collisionBalls[i]);
                         balls.splice(index, 1);
+                        // The first removed ball will be the next launcher start point
                         if (launchx === null) {
-                            launchx = nextCollisionBalls[i].x;
+                            launchx = collisionBalls[i].x;
                         }
                     }
                 }
                 
+                // Re-compute next collisions from collision time since blocks may have changed
                 for (let i = 0; i < balls.length; i++) {
+                	// Also check if extra balls were touched before collision time
                 	let extraBallCollisions = balls[i].extraBallCollisions;
                 	for (let j = 0; j < extraBallCollisions.length; j++) {
-                		if(extraBallCollisions[j].time <= nextCollisionTime) {                			
+                		if(extraBallCollisions[j].time <= collisionTime) {                			
                 			extraBallCollisions[j].extraball.processCollision();
                 		}
                 	}
@@ -485,6 +493,7 @@ function loadGame() {
                     changeLevel = true;
                 }
             } else {
+            	// Check if extra balls were touched
             	for (let i = 0; i < balls.length; i++) {
                 	let extraBallCollisions = balls[i].extraBallCollisions;
                 	for (let j = 0; j < extraBallCollisions.length; j++) {
@@ -497,20 +506,25 @@ function loadGame() {
             }
         }
         
+        // Clear previous frame drawing
         ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
 
-        if (level === 0 || changeLevel) {
+        // Move blocks down if necessary
+        if (level === 0 || changeLevel) {        	
             nextLevel();
         }
 
+        // Draw blocks
         for (let i = 0; i < blocks.length; i++) {
             blocks[i].draw();
         }
         
+        // Draw extra balls
         for (let i = 0; i < extraballs.length; i++) {
         	extraballs[i].draw(currentTime);
         }
 
+        // Draw launcher start point
         if (launchx !== null) {
             ctxBalls.beginPath();
             ctxBalls.fillStyle = "rgb(255,255,255)";
@@ -518,10 +532,12 @@ function loadGame() {
             ctxBalls.fill();
         }
 
+        // Draw balls
         for (let i = 0; i < balls.length; i++) {
             balls[i].draw(currentTime);
         }
         
+        // Draw launcher
         if(launchTarget !== null) {
 			ctxBalls.fillStyle = "rgb(255,255,255)";
 			let launcherLength = Math.sqrt(Math.pow(launchTarget.x-launchx, 2)+Math.pow(launchTarget.y-height+ballradius, 2));
@@ -532,11 +548,13 @@ function loadGame() {
 			}			
         }
         
+        // Schedule next drawing
         if (!gameover) {
             requestAnimationFrame(drawAll);
         }
     }
 
+    // Events for ball launcher
     $("#canvas-balls").off();
     
     $("#canvas-balls").on("vmousedown", function (evt) {
@@ -586,12 +604,14 @@ function loadGame() {
         touchPos = null;
     });
     
+    // Reload button
     $("#reload").off();
     $("#reload").click(function() {
     	gameover = true;
     	loadGame();
     });
 
+    // Start drawing
     drawAll();
 }
 
