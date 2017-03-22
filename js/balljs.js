@@ -23,6 +23,7 @@ function loadGame() {
     var fontSize = Math.floor(20*ratio);
     
     var blocks = new Array();
+    var extraballs = new Array();
     var balls = new Array();
     
     $("#main").width(width);
@@ -80,6 +81,7 @@ function loadGame() {
     
     var launchx = width / 2;    
     var level = 0;    
+    var ballCount = 1;
     var launchTarget = null;
     var touchPos = null;
     var gameover = false;
@@ -122,6 +124,60 @@ function loadGame() {
 				let metric = ctxBlocks.measureText(text);
 				ctxBlocks.fillText(text, this.x + blocklength/2 - metric.width/2, this.y + blocklength/2 + fontSize/2);
 			}
+        }
+    }
+    
+    class ExtraBall {
+    	constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.deleted = false;
+            this.extradius = 0;
+        }
+    	
+    	moveDown() {
+			this.clear();
+			this.y += blocklength + blockspace;
+			if(this.y > blockspace + (blocklength+blockspace)*(blockpercol+1))  {
+				this.deleted = true;
+			}
+		}
+    	
+    	processCollision() {
+    		if(!this.deleted) {
+	    		this.clear();
+	    		this.deleted = true;
+	    		ballCount++;
+    		}
+    	}
+    	
+    	clear() {
+    		ctxBlocks.clearRect(this.x-blocklength/2, this.y-blocklength/2, blocklength, blocklength);
+    	}
+    	
+    	draw(time) {
+    		if(!this.deleted) {
+    			let extradius = ballradius + Math.floor(ballradius*((Math.cos(time/100)/4)+1));
+	    		
+	    		if(extradius !== this.extradius) {
+	    			this.clear();	    		
+		    		
+		    		ctxBlocks.fillStyle = "rgb(255,255,255)";
+		    		ctxBlocks.beginPath();
+		    		ctxBlocks.arc(this.x, this.y, extradius+2, 0, Math.PI * 2, true);
+		    		ctxBlocks.fill();
+		    		ctxBlocks.fillStyle = "rgb(0,0,0)";
+		    		ctxBlocks.beginPath();
+		    		ctxBlocks.arc(this.x, this.y, extradius, 0, Math.PI * 2, true);
+		    		ctxBlocks.fill();
+		    		ctxBlocks.fillStyle = "rgb(255,255,255)";	    		
+		    		ctxBlocks.beginPath();
+		    		ctxBlocks.arc(this.x, this.y, ballradius, 0, Math.PI * 2, true);
+		    		ctxBlocks.fill();
+		    		
+		    		this.extradius = extradius;
+	    		}
+    		}
         }
     }
 
@@ -207,6 +263,19 @@ function loadGame() {
                     }
                 }
             }
+            
+            this.extraBallCollisions = new Array();
+            for (let i = 0; i < extraballs.length; i++) {
+            	if(!extraballs[i].deleted) {
+	            	let time = this.getCollisionTime(extraballs[i].x, extraballs[i].y, 3*ballradius);
+	            	if(time !== null && time >= this.starttime) {
+	            		this.extraBallCollisions.push({
+	            			time: time,
+	            			extraball: extraballs[i]
+	            		});
+	            	}
+            	}
+            }
         }
 
         processCollision() {
@@ -242,6 +311,38 @@ function loadGame() {
             ctxBalls.arc(newx, newy, ballradius, 0, Math.PI * 2, true);
             ctxBalls.fill();
         }
+        
+        getCollisionTime(ex, ey, d) {
+        	/*
+        	 * We simplify the equation by translating the referential (space and time) to the ball starting point.
+        	 * We will also work with seconds instead of milliseconds.  
+        	 */
+        	let tx = ex-this.x;
+        	let ty = ey-this.y;
+        	
+        	/*
+        	 * We want to know when the distance to the target will equal d.
+        	 * We use Pythagore :
+        	 * (tx-x)^2 + (ty-y)^2 - d^2 = 0
+        	 * (tx-speedx*time)^2 + (ty-speedy*time)^2 - d^2 = 0
+        	 * speedx^2*time^2 - 2*tx*speedx*time + tx^2 + speedy^2*time^2 - 2*ty*speedy*time + ty^2 - d^2 = 0
+        	 * (speedx^2 + speedy^2)*time^2 - (2*tx*speedx + 2*ty*speedy)*time + tx^2 + ty^2 - d^2 = 0
+        	 * 
+        	 * We end up with a quadratic equation (a*time^2+b*time+c)
+        	 */
+        	
+        	let a = this.speedx*this.speedx + this.speedy*this.speedy;
+        	let b = -(2*tx*this.speedx + 2*ty*this.speedy);
+        	let c = tx*tx + ty*ty - d*d;
+        	
+            let t = solveQuadraticEquation(a, b, c);
+             
+             if(t !== null) {
+            	 return t*1000+this.starttime;
+             }
+             
+             return null;
+        }
     }
 
     function shoot(mousex, mousey) {
@@ -249,8 +350,7 @@ function loadGame() {
         let y = mousey - height + 5;
         var speedx = x * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var speedy = y * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-        var currentTime = Date.now();
-        var ballCount = level <= 1 ? 1 : level-1;        
+        var currentTime = Date.now();        
         for (var i = 0; i < ballCount; i++) {
             balls.push(new Ball(currentTime + i * 90, launchx, height - ballradius, speedx, speedy));
         }
@@ -267,6 +367,13 @@ function loadGame() {
             blocks[i].moveDown();
             if(blocks[i].y > blockspace + (blocklength+blockspace)*blockpercol) {
                 gameover = true;
+            }
+        }
+        for (let i = 0; i < extraballs.length; i++) {
+        	extraballs[i].moveDown();
+            if(extraballs[i].deleted) {
+            	extraballs.splice(i, 1);
+            	i--;
             }
         }
 
@@ -289,6 +396,11 @@ function loadGame() {
             blocks.push(new Block(blockspace + (blockspace+blocklength)*pos, blockspace + blocklength, counter));
         }
         
+        if(level > 1) {
+	        let posIndex =  Math.floor(Math.random()*availablePos.length);
+	        let pos = availablePos[posIndex];
+	        extraballs.push(new ExtraBall(blockspace + (blockspace+blocklength)*pos+blocklength/2, blockspace + 3*blocklength/2));
+        }
         
         if(gameover) {
         	if(localStorage) {
@@ -357,15 +469,30 @@ function loadGame() {
                         }
                     }
                 }
-
+                
                 for (let i = 0; i < balls.length; i++) {
-                    balls[i].computeCollisionTime();
-                }
+                	let extraBallCollisions = balls[i].extraBallCollisions;
+                	for (let j = 0; j < extraBallCollisions.length; j++) {
+                		if(extraBallCollisions[j].time <= nextCollisionTime) {                			
+                			extraBallCollisions[j].extraball.processCollision();
+                		}
+                	}
+                	
+                	balls[i].computeCollisionTime();
+                }                
                 
                 if(balls.length === 0) {
                     changeLevel = true;
                 }
             } else {
+            	for (let i = 0; i < balls.length; i++) {
+                	let extraBallCollisions = balls[i].extraBallCollisions;
+                	for (let j = 0; j < extraBallCollisions.length; j++) {
+                		if(extraBallCollisions[j].time <= currentTime) {
+                			extraBallCollisions[j].extraball.processCollision();
+                		}
+                	}
+                }
                 break;
             }
         }
@@ -378,6 +505,10 @@ function loadGame() {
 
         for (let i = 0; i < blocks.length; i++) {
             blocks[i].draw();
+        }
+        
+        for (let i = 0; i < extraballs.length; i++) {
+        	extraballs[i].draw(currentTime);
         }
 
         if (launchx !== null) {
@@ -400,7 +531,7 @@ function loadGame() {
 				ctxBalls.fill();
 			}			
         }
-
+        
         if (!gameover) {
             requestAnimationFrame(drawAll);
         }
@@ -517,4 +648,20 @@ function hsv2rgb(h, s, v) {
         g: Math.round(g),
         b: Math.round(b)
     };
-};
+}
+
+function solveQuadraticEquation(a, b, c) {
+	let delta = b*b-4*a*c;
+    
+    if(delta >= 0) {
+    	let x1 = (-b+Math.sqrt(delta))/(2*a);
+    	let x2 = (-b-Math.sqrt(delta))/(2*a);
+   	 
+    	// return only the first positive solution
+    	let x = (x1 < x2 && x1 >= 0) ? x1 : x2;
+        
+        return x;
+    }
+    
+    return null;
+}
