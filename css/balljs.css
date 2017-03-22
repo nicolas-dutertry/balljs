@@ -1,5 +1,5 @@
 /*
- * Balljs - A ball breaker game
+ * Balljs - A brick breaker game
  * http://github.com/nicolas-dutertry/balljs
  * 
  * Written by Nicolas Dutertry.
