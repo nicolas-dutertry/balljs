@@ -460,16 +460,7 @@ function loadGame() {
             	}
             }
 
-            let alive = (this.collisionBlock !== null || this.collisionType !== "bottom");
-            if(!alive) {
-                this.clear();
-            }
-
-            return alive;
-        }
-
-        clear() {
-            ctxBalls.clearRect(this.currentx-ballradius-1, this.currenty-ballradius-1, ballradius*2+2, ballradius*2+2);
+            return this.collisionBlock !== null || this.collisionType !== "bottom";
         }
 
         draw(time) {
@@ -489,8 +480,6 @@ function loadGame() {
             ctxBalls.beginPath();
             ctxBalls.arc(newx, newy, ballradius, 0, Math.PI * 2, true);
             ctxBalls.fill();
-            this.currentx = newx;
-            this.currenty = newy;
         }
         
         getCollisionTime(ex, ey, d) {
@@ -527,7 +516,6 @@ function loadGame() {
     }
 
     function shoot(mousex, mousey) {
-        ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
         let x = mousex - launchx;
         let y = mousey - height + 5;
         var speedx = x * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
@@ -692,9 +680,7 @@ function loadGame() {
         }
         
         // Clear previous frame drawing
-        if(balls.length === 0) {
-            ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
-        }
+        ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
 
         // Move blocks down if necessary
         if (level === 0 || changeLevel) {        	
@@ -711,19 +697,9 @@ function loadGame() {
         	extraballs[i].draw(currentTime);
         }
 
-        for (let i = 0; i < balls.length; i++) {
-            balls[i].clear();
-        }
-
         // Draw launcher start point
-        if (nextLaunchx !== null) {
-            ctxBalls.clearRect(nextLaunchx-ballradius-1,height-2*ballradius-1, 2*ballradius+2,2*ballradius+2);
-        }
-
         if (launchx !== null) {
-            let metric = ctxBalls.measureText("x" + ballCount);
-            ctxBalls.clearRect(launchx - metric.width-1, height-2*launcherFontSize-ballradius*3-1, metric.width+ballradius+2, 2*launcherFontSize+ballradius*3+2);
-			let launchCount = ballCount;
+            let launchCount = ballCount;
 			if(balls.length > 0) {
 				launchCount = 0;
 				for (let i = 0; i < balls.length; i++) {
