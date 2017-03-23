@@ -738,12 +738,33 @@ function loadGame() {
         // Draw launcher
         if(launchTarget !== null) {
 			ctxBalls.fillStyle = "rgb(255,255,255)";
-			let launcherLength = Math.sqrt(Math.pow(launchTarget.x-launchx, 2)+Math.pow(launchTarget.y-height+ballradius, 2));
-			for(let i = 1; i <= 16; i++) {
+			let launcherLengthP2 = Math.pow(launchTarget.x-launchx, 2)+Math.pow(launchTarget.y-height+ballradius, 2);
+			if(launcherLengthP2 > 100*ballradius*ballradius) {
+				let launcherLength = Math.sqrt(launcherLengthP2);
+				
+				let theta = 0;
+				if(launchTarget.x-launchx === 0) {
+					theta = -Math.PI/2;
+				} else if(launchTarget.x-launchx > 0) {
+					theta = Math.atan((launchTarget.y-height+ballradius)/(launchTarget.x-launchx));
+				} else {
+					theta = Math.PI - Math.atan(-(launchTarget.y-height+ballradius)/(launchTarget.x-launchx));
+				}
+				
+				let l = 6*ballradius;
+				let lx=launchx+l*(launchTarget.x-launchx)/launcherLength;
+				let ly=height-ballradius+l*(launchTarget.y-height+ballradius)/launcherLength;
 				ctxBalls.beginPath();
-				ctxBalls.arc(launchx+(launchTarget.x-launchx)*i/8, height-ballradius+(launchTarget.y-height+ballradius)*i/8, launcherLength*ballradius/height, 0, Math.PI * 2, true);
+				ctxBalls.arc(launchx, height-ballradius, 1.5*ballradius, theta-Math.PI/8, theta+Math.PI/8, false);
+				ctxBalls.lineTo(lx, ly);
 				ctxBalls.fill();
-			}			
+				
+				for(let i = 1; i <= 16; i++) {
+					ctxBalls.beginPath();
+					ctxBalls.arc(lx+(launchTarget.x-lx)*i/8, ly+(launchTarget.y-ly)*i/8, launcherLength*ballradius/height, 0, Math.PI * 2, true);
+					ctxBalls.fill();
+				}
+			}
         }
         
         // Schedule next drawing
@@ -795,8 +816,10 @@ function loadGame() {
 				x: x,
 				y: y
 			}
-			
-            shoot(launchTarget.x, launchTarget.y);
+            
+            if(Math.pow(launchTarget.x-launchx, 2)+Math.pow(launchTarget.y-height+ballradius, 2) > 100*ballradius*ballradius) {			
+            	shoot(launchTarget.x, launchTarget.y);
+            }
         }            
         launchTarget = null;
         touchPos = null;
