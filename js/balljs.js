@@ -367,51 +367,52 @@ function loadGame() {
                 		let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
                 		
                 		/*
-                		 * collision angle : theta
+                		 * Collision angle: theta
                 		 * cos(theta) = (cornerX-potentialX)/ballradius
                 		 * sin(theta) = (cornerY-potentialY)/ballradius
                 		 * 
-                		 * speed angle : alpha
+                		 * Speed angle: alpha
                 		 * cos(alpha) = speedX/speed
                 		 * sin(alpha) = speedY/speed
                 		 * 
-                		 * new speed angle = beta = alpha+PI-2*theta
+                		 * New speed angle: beta = PI-alpha+2*theta
                 		 * cos(beta) = newspeedX/speed
                 		 * sin(beta) = newspeedY/speed
                 		 * 
-                		 * cos(beta) = cos(PI + alpha - 2*theta) = -cos(alpha - 2*theta)
-                		 *           = - [ cos(alpha)*cos(-2*theta) - sin(alpha)*sin(-2*theta) ]
-                		 *           = - [ cos(alpha)*cos(2*theta) + sin(alpha)*sin(2*theta) ]
-                		 *           = - [ cos(alpha)*(2*cos(theta)^2-1) + 2*sin(alpha)*sin(theta)*cos(theta) ]
+                		 * We can use the following trigonometry formulae:
+                		 * cos(PI-a) = -cos(a)
+                		 * sin(PI-a) = sin(a)
+                		 * cos(a-b) = cos(a)cos(b)+sin(a)sin(b)
+                		 * sin(a-b) = sin(a)cos(b)-cos(a)sin(b)
+                		 * cos(2a) = cos²(a) - 1
+                		 *         = 1 - 2sin²(a)
+                		 * sin(2a) = 2cos(a)sin(a)
                 		 * 
-                		 * sin(beta) = sin(PI + alpha - 2*theta) = -sin(alpha - 2*theta)
-                		 *           = - [ sin(alpha)*cos(2*theta) - cos(alpha)*sin(2*theta) ]
-                		 *           = - [ sin(alpha)*(2*cos(theta)^2-1) - 2*cos(alpha)*sin(theta)*cos(theta) ]
+                		 * Thus:
+                		 * cos(beta) = cos(PI - alpha + 2*theta) = -cos(alpha - 2*theta)
+                		 *           = - [ cos(alpha)*cos(2*theta) + sin(alpha)*sin(2*theta) ]
+                		 *           = - cos(alpha)*(2*cos²(theta)-1) - 2*sin(alpha)*sin(theta)*cos(theta)
+                		 * newspeedX = - speedX*(2*cos²(theta)-1) - 2*speedY*sin(theta)*cos(theta)
+                		 *           = speedX - 2*speedX*cos²(theta) - 2*speedY*sin(theta)*cos(theta)
+                		 *           = speedX - 2*(speedX*cos(theta) + speedY*sin(theta))*cos(theta)
+                		 * 
+                		 * sin(beta) = sin(PI - alpha + 2*theta) = sin(alpha - 2*theta)
+                		 *           = sin(alpha)*cos(2*theta) - cos(alpha)*sin(2*theta)
+                		 *           = sin(alpha)*(1-2*sin²(theta)) - 2*cos(alpha)*sin(theta)*cos(theta)
+                		 * newspeedY = speedY*(1-2*sin²(theta)) - 2*speedX*sin(theta)*cos(theta)
+                		 *           = speedY - 2*speedY*sin²(theta) - 2*speedX*sin(theta)*cos(theta)
+                		 *           = speedY - 2*(speedY*sin(theta) + speedX*cos(theta))*sin(theta)
                 		 */
                 		
-                		/*
-                		let costheta = (potentialX-potentialCorner.x)/ballradius;                		
-                		let sintheta = (potentialY-potentialCorner.y)/ballradius;
+                		
+                		let costheta = (potentialCorner.x-potentialX)/ballradius;                		
+                		let sintheta = (potentialCorner.y-potentialY)/ballradius;
+                		let projection = this.speedx*costheta + this.speedy*sintheta;
                 		
                 		this.collisionTime = potentialTime;
                         this.collisionBlock = block;
-                        this.collisionSpeedx = this.speedx-2*this.speedx*Math.pow(costheta,2) + 2*this.speedy*sintheta*costheta;
-                        this.collisionSpeedy = this.speedy-2*this.speedy*Math.pow(costheta,2) - 2*this.speedx*sintheta*costheta;
-                        */
-                		
-                		let nx = potentialX - potentialCorner.x;
-                		let ny = potentialY - potentialCorner.y;
-                		let length = ballradius;//Math.sqrt(nx * nx + ny * ny);
-                		nx /= length;
-                		ny /= length;
-                		
-                		let projection = this.speedx * nx + this.speedy * ny;
-                		
-                		this.collisionTime = potentialTime;
-                        this.collisionBlock = block;
-                        this.collisionSpeedx = this.speedx - 2 * projection * nx;
-                        this.collisionSpeedy = this.speedy - 2 * projection * ny;
-
+                        this.collisionSpeedx = this.speedx-2*projection*costheta;                        
+                        this.collisionSpeedy = this.speedy-2*projection*sintheta;
                 	}
                 }
             }
