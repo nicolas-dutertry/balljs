@@ -213,57 +213,53 @@ function loadGame() {
             this.launched = false;
             this.deleted = false;
             this.checkInfinite = false;
-            this.collisionTime = null;
-            this.collisionType = null;
-            this.collisionBlock = null;
-            this.collisionSpeedx = null;
-            this.collisionSpeedy = null;
-            this.computeCollisionTime();
+            this.nextCollision = null;
+            this.computeNextCollision();
         }
 
-        computeCollisionTime() {
+        computeNextCollision() {
         	if(this.deleted) {
         		return;
         	}
         	
-            this.collisionTime = null;
-            this.collisionType = null;
-            this.collisionBlock = null;
-            this.collisionSpeedx = null;
-            this.collisionSpeedy = null;
+            this.nextCollision = null;
 
+            // Check border collision
             var collisionXTime;
-            var collisionXType;
             if (this.speedx > 0) {
                 collisionXTime = (width - ballradius - this.x) * 1000 / this.speedx + this.starttime;
-                collisionXType = "right";
             } else if (this.speedx < 0) {
                 collisionXTime = (ballradius - this.x) * 1000 / this.speedx + this.starttime;
-                collisionXType = "left";
             }
 
             var collisionYTime;
             var collisionYType;
             if (this.speedy > 0) {
                 collisionYTime = (height - ballradius - this.y) * 1000 / this.speedy + this.starttime;
-                collisionYType = "bottom";
             } else if (this.speedy < 0) {
                 collisionYTime = (ballradius - this.y) * 1000 / this.speedy + this.starttime;
-                collisionYType = "top";
             }
 
             if (collisionYTime > collisionXTime) {
-                this.collisionTime = collisionXTime;
-                this.collisionType = collisionXType;
-                this.collisionSpeedx = -this.speedx;
-                this.collisionSpeedy = this.speedy;
+            	this.nextCollision = {
+        			time: collisionXTime,
+        			block: null,
+        			speedx: -this.speedx,
+        			speedy: this.speedy,
+        			bottom: false
+            	}
             } else {
-                this.collisionTime = collisionYTime;
-                this.collisionType = collisionYType;
-                this.collisionSpeedx = this.speedx;
-                this.collisionSpeedy = -this.speedy;
+            	let bottom = this.speedy > 0;
+            	this.nextCollision = {
+        			time: collisionYTime,
+        			block: null,
+        			speedx: this.speedx,
+        			speedy: -this.speedy,
+        			bottom: bottom
+            	}
             }
 
+            // Check collision with blocks
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i];
                 let potentialCorner = null;
@@ -271,7 +267,7 @@ function loadGame() {
                 if (this.speedx > 0) {
                     let potentialTime = (block.x - ballradius - this.x) * 1000 / this.speedx + this.starttime;
                     let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
                         if(potentialY < block.y) {
                         	potentialCorner = {
                         		x: block.x,
@@ -283,17 +279,17 @@ function loadGame() {
                             		y: block.y+blocklength
                             	};
                         } else {
-	                    	this.collisionTime = potentialTime;
-	                        this.collisionType = "right";
-	                        this.collisionBlock = block;
-	                        this.collisionSpeedx = -this.speedx;
-	                        this.collisionSpeedy = this.speedy;
+	                    	this.nextCollision.time = potentialTime;
+	                        this.nextCollision.block = block;
+	                        this.nextCollision.speedx = -this.speedx;
+	                        this.nextCollision.speedy = this.speedy;
+	                        this.nextCollision.bottom = false;
                         }
                     }
                 } else if (this.speedx < 0) {
                     let potentialTime = (block.x + blocklength + ballradius - this.x) * 1000 / this.speedx + this.starttime;
                     let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
                     	if(potentialY < block.y) {
                         	potentialCorner = {
                         		x: block.x+blocklength,
@@ -305,11 +301,11 @@ function loadGame() {
                             		y: block.y+blocklength
                             	};
                         } else {
-	                    	this.collisionTime = potentialTime;
-	                        this.collisionType = "left";
-	                        this.collisionBlock = block;
-	                        this.collisionSpeedx = -this.speedx;
-	                        this.collisionSpeedy = this.speedy;
+                        	this.nextCollision.time = potentialTime;
+	                        this.nextCollision.block = block;
+	                        this.nextCollision.speedx = -this.speedx;
+	                        this.nextCollision.speedy = this.speedy;
+	                        this.nextCollision.bottom = false;
                         }
                     }
                 }
@@ -317,7 +313,7 @@ function loadGame() {
                 if (this.speedy > 0) {
                     let potentialTime = (block.y - ballradius - this.y) * 1000 / this.speedy + this.starttime;
                     let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
                     	if(potentialX < block.x) {
                         	potentialCorner = {
                         		x: block.x,
@@ -329,17 +325,17 @@ function loadGame() {
                             		y: block.y
                             	};
                         } else {
-                        	this.collisionTime = potentialTime;
-	                        this.collisionType = "bottom";
-	                        this.collisionBlock = block;
-	                        this.collisionSpeedx = this.speedx;
-	                        this.collisionSpeedy = -this.speedy;
+                        	this.nextCollision.time = potentialTime;
+	                        this.nextCollision.block = block;
+	                        this.nextCollision.speedx = this.speedx;
+	                        this.nextCollision.speedy = -this.speedy;
+	                        this.nextCollision.bottom = false;
                         }
                     }
                 } else if (this.speedy < 0) {
                     let potentialTime = (block.y + blocklength + ballradius - this.y) * 1000 / this.speedy + this.starttime;
                     let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.collisionTime && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
+                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
                     	if(potentialX < block.x) {
                         	potentialCorner = {
                         		x: block.x,
@@ -351,18 +347,18 @@ function loadGame() {
                             		y: block.y+blocklength
                             	};
                         } else {
-	                        this.collisionTime = potentialTime;
-	                        this.collisionType = "top";
-	                        this.collisionBlock = block;
-	                        this.collisionSpeedx = this.speedx;
-	                        this.collisionSpeedy = -this.speedy;
+                        	this.nextCollision.time = potentialTime;
+	                        this.nextCollision.block = block;
+	                        this.nextCollision.speedx = this.speedx;
+	                        this.nextCollision.speedy = -this.speedy;
+	                        this.nextCollision.bottom = false;
                         }
                     }
                 }
                 
                 if(potentialCorner !== null) {
                 	let potentialTime = this.getCollisionTime(potentialCorner.x, potentialCorner.y, ballradius);
-                	if(potentialTime !== null && potentialTime >= this.starttime && potentialTime < this.collisionTime) {
+                	if(potentialTime !== null && potentialTime >= this.starttime && potentialTime < this.nextCollision.time) {
                 		let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
                 		let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
                 		
@@ -409,10 +405,11 @@ function loadGame() {
                 		let sintheta = (potentialCorner.y-potentialY)/ballradius;
                 		let projection = this.speedx*costheta + this.speedy*sintheta;
                 		
-                		this.collisionTime = potentialTime;
-                        this.collisionBlock = block;
-                        this.collisionSpeedx = this.speedx-2*projection*costheta;                        
-                        this.collisionSpeedy = this.speedy-2*projection*sintheta;
+                		this.nextCollision.time = potentialTime;
+                        this.nextCollision.block = block;
+                        this.nextCollision.speedx = this.speedx-2*projection*costheta;
+                        this.nextCollision.speedy = this.speedy-2*projection*sintheta;
+                        this.nextCollision.bottom = false;
                 	}
                 }
             }
@@ -431,16 +428,16 @@ function loadGame() {
             }
         }
 
-        processCollision() {
-            this.x = this.x + this.speedx * (this.collisionTime - this.starttime) / 1000;
-            this.y = this.y + this.speedy * (this.collisionTime - this.starttime) / 1000;
-            this.starttime = this.collisionTime;
+        processCollision() {        	
+            this.x = this.x + this.speedx * (this.nextCollision.time - this.starttime) / 1000;
+            this.y = this.y + this.speedy * (this.nextCollision.time - this.starttime) / 1000;
+            this.starttime = this.nextCollision.time;
             
-            this.speedx = this.collisionSpeedx;
-            this.speedy = this.collisionSpeedy;
+            this.speedx = this.nextCollision.speedx;
+            this.speedy = this.nextCollision.speedy;
             
             // Infinite rebound prevention
-            if(this.checkInfinite && this.collisionBlock === null && this.speedy > -ballradius && this.speedy < ballradius) {
+            if(this.checkInfinite && this.nextCollision.block === null && this.speedy > -ballradius && this.speedy < ballradius) {
             	this.speedy = ballradius;
             	if(this.speedx > 0) {
             		this.speedx = Math.sqrt(speed*speed-ballradius*ballradius);
@@ -450,9 +447,10 @@ function loadGame() {
             }
             this.horizontal = false;
 
-            if (this.collisionBlock !== null) {                
-                if (!this.collisionBlock.decrease()) {
-                    let index = blocks.indexOf(this.collisionBlock);
+            let block = this.nextCollision.block;
+            if (block !== null) {
+                if (!block.decrease()) {
+                    let index = blocks.indexOf(block);
                     blocks.splice(index, 1);
                 }
             } else {
@@ -461,7 +459,18 @@ function loadGame() {
             	}
             }
 
-            return this.collisionBlock !== null || this.collisionType !== "bottom";
+            return this.nextCollision;
+        }
+        
+        checkExtraBallCollisions(time) {
+        	for (let j = 0; j < this.extraBallCollisions.length; j++) {
+        		let extraBallCollision = this.extraBallCollisions[j];
+        		if(extraBallCollision.time <= time) {
+        			extraBallCollision.extraball.processCollision();
+        			this.extraBallCollisions.splice(j, 1);
+        			j--;
+        		}
+        	}
         }
 
         draw(time) {
@@ -624,13 +633,13 @@ function loadGame() {
             // Check the first collision occurred since previous frame
             for (let i = 0; i < balls.length; i++) {
                 let ball = balls[i];
-                if (ball.collisionTime !== null && ball.collisionTime <= currentTime) {
-                    if (collisionTime === null || ball.collisionTime < collisionTime) {
+                if (ball.nextCollision.time !== null && ball.nextCollision.time <= currentTime) {
+                    if (collisionTime === null || ball.nextCollision.time < collisionTime) {
                         collisionBalls = new Array();
-                        collisionTime = ball.collisionTime;
+                        collisionTime = ball.nextCollision.time;
                     }
 
-                    if (ball.collisionTime <= collisionTime) {
+                    if (ball.nextCollision.time <= collisionTime) {
                         collisionBalls.push(ball);
                     }
                 }
@@ -638,29 +647,43 @@ function loadGame() {
 
             // Process collisions
             if (collisionBalls !== null) {
+            	let deletedBlocks = new Array();
                 for (let i = 0; i < collisionBalls.length; i++) {
-                    if (!collisionBalls[i].processCollision()) {
+                	let ball = collisionBalls[i];
+                	let collision = ball.processCollision();
+                    if (collision.bottom) {
                     	// Remove the ball since it's a collision with bottom
-                        let index = balls.indexOf(collisionBalls[i]);
+                        let index = balls.indexOf(ball);
                         balls.splice(index, 1);
                         // The first removed ball will be the next launcher start point
                         if (nextLaunchx === null) {
-                        	nextLaunchx = collisionBalls[i].x;
+                        	nextLaunchx = ball.x;
                         }
+                    } else {
+                    	ball.checkExtraBallCollisions(collisionTime);
+                    	ball.computeNextCollision();
+                    	if(collision.block != null && collision.block.counter <= 0) {
+                    		deletedBlocks.push(collision.block);
+                    	}
                     }
                 }
                 
                 // Re-compute next collisions from collision time since blocks may have changed
                 for (let i = 0; i < balls.length; i++) {
-                	// Also check if extra balls were touched before collision time
-                	let extraBallCollisions = balls[i].extraBallCollisions;
-                	for (let j = 0; j < extraBallCollisions.length; j++) {
-                		if(extraBallCollisions[j].time <= collisionTime) {                			
-                			extraBallCollisions[j].extraball.processCollision();
-                		}
+                	let ball = balls[i];
+                	if(collisionBalls.indexOf(ball) >= 0) {
+                		// Balls in collisionBalls have already been recomputed 
+                		continue;
                 	}
                 	
-                	balls[i].computeCollisionTime();
+                	// Re-Compute only for balls which should have touch deleted blocks
+                	let deletedIndex = deletedBlocks.indexOf(ball.nextCollision.block);
+                	if(deletedIndex >= 0) {
+                		// Also check if extra balls were touched before collision time
+                    	ball.checkExtraBallCollisions(collisionTime);
+                    	// Re-compute
+                		ball.computeNextCollision();
+                	}
                 }                
                 
                 if(balls.length === 0) {
@@ -669,19 +692,11 @@ function loadGame() {
             } else {
             	// Check if extra balls were touched
             	for (let i = 0; i < balls.length; i++) {
-                	let extraBallCollisions = balls[i].extraBallCollisions;
-                	for (let j = 0; j < extraBallCollisions.length; j++) {
-                		if(extraBallCollisions[j].time <= currentTime) {
-                			extraBallCollisions[j].extraball.processCollision();
-                		}
-                	}
+            		balls[i].checkExtraBallCollisions(currentTime);
                 }
                 break;
             }
         }
-        
-        // Clear previous frame drawing
-        ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
 
         // Move blocks down if necessary
         if (level === 0 || changeLevel) {        	
@@ -696,6 +711,14 @@ function loadGame() {
         // Draw extra balls
         for (let i = 0; i < extraballs.length; i++) {
         	extraballs[i].draw(currentTime);
+        }
+        
+        // Clear previous frame drawing
+        ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
+        
+        // Draw balls
+        for (let i = 0; i < balls.length; i++) {
+            balls[i].draw(currentTime);
         }
 
         // Draw launcher start point
@@ -729,12 +752,7 @@ function loadGame() {
             ctxBalls.fillStyle = "rgb(255,255,255)";
             ctxBalls.arc(nextLaunchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
             ctxBalls.fill();
-        }
-
-        // Draw balls
-        for (let i = 0; i < balls.length; i++) {
-            balls[i].draw(currentTime);
-        }
+        }        
         
         // Draw launcher
         if(launchTarget !== null) {
