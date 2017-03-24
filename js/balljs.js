@@ -47,6 +47,9 @@ function loadGame() {
     var extraballs = new Array();
     var balls = new Array();
     
+    $("#toucharea").width(documentWidth);
+    $("#toucharea").height(documentHeight);
+    
     $("#main").width(width);
     $("#main").height(documentHeight);
     $("#main").offset({top: 0, left: left});
@@ -80,7 +83,7 @@ function loadGame() {
     gameOverDiv.css("border-radius", fontSize + "px");    
     gameOverDiv.offset({top: height/2, left: left+0.05*width});
     gameOverDiv.width(0.9*width);
-    gameOverDiv.css("z-index", "0");
+    gameOverDiv.css("z-index", "-1");
     
     var aboutDiv = $("#about");
     aboutDiv.css("font-size", Math.floor(0.8*fontSize) + "px");
@@ -767,7 +770,7 @@ function loadGame() {
 				} else if(launchTarget.x-launchx > 0) {
 					theta = Math.atan((launchTarget.y-height+ballradius)/(launchTarget.x-launchx));
 				} else {
-					theta = Math.PI - Math.atan(-(launchTarget.y-height+ballradius)/(launchTarget.x-launchx));
+					theta = Math.PI + Math.atan((launchTarget.y-height+ballradius)/(launchTarget.x-launchx));
 				}
 				
 				let l = 6*ballradius;
@@ -793,15 +796,15 @@ function loadGame() {
     }
 
     // Events for ball launcher
-    $("#canvas-balls").off();
+    $("#toucharea").off();
     
-    $("#canvas-balls").on("vmousedown", function (evt) {
+    $("#toucharea").on("vmousedown", function (evt) {
         if (balls.length === 0 && !gameover) {
             touchPos = getMousePos(evt);
         }
     });
     
-    $("#canvas-balls").on("vmousemove", function (evt) {            
+    $("#toucharea").on("vmousemove", function (evt) {            
         if (balls.length === 0 && touchPos !== null) {
 			let mousePos = getMousePos(evt);
 			let y = height-ballradius+touchPos.y-mousePos.y;
@@ -819,12 +822,12 @@ function loadGame() {
         }
     });
     
-    $("#canvas-balls").on("vmouseout", function (evt) {
+    $("#toucharea").on("vmouseout", function (evt) {
         launchTarget = null;
         touchPos = null;
     });
     
-    $("#canvas-balls").on("vmouseup", function (evt) {
+    $("#toucharea").on("vmouseup", function (evt) {
         if (balls.length === 0 && launchTarget !== null) {
             let mousePos = getMousePos(evt);
 			

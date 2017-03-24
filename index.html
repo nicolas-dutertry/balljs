@@ -10,17 +10,18 @@
         <script type="application/x-javascript" src="js/balljs.js"></script>
     </head>
     <body>
-        <div id="main">
+        <div id="toucharea"></div>
+        <img src="images/reload.png" id="reload" title="Reload"/>        
+        <div id="main">            
             <div id="header">
-                <img src="images/reload.png" id="reload" title="Reload"/>
-                <span id="best"></span>
-                <span id="score"></span>
-            </div>
+	            <span id="best"></span>
+	            <span id="score"></span>
+	        </div>
             <canvas id='canvas-background'></canvas>
             <canvas id='canvas-blocks'></canvas>
-            <canvas id='canvas-balls'></canvas>
-            <div id="game-over">GAME OVER</div>
-            <div id="about">balljs - <a href="https://github.com/nicolas-dutertry/balljs" target="_new">https://github.com/nicolas-dutertry/balljs</a></div>
+            <canvas id='canvas-balls'></canvas>                        
         </div>
+        <div id="game-over">GAME OVER</div>
+        <div id="about">balljs - <a href="https://github.com/nicolas-dutertry/balljs" target="_new">https://github.com/nicolas-dutertry/balljs</a></div>
     </body>
  </html>

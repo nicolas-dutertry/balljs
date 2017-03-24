@@ -27,6 +27,13 @@ body {
     display: none;
 }
 
+#toucharea {
+	display: block;
+    position: fixed;
+    background: transparent;
+    z-index: 4;
+}
+
 #main {
     display: block;
     position: fixed;
@@ -61,6 +68,7 @@ canvas {
 #reload {
 	position: fixed;
 	cursor: pointer;
+	z-index: 5;
 }
 
 #best {
@@ -73,7 +81,7 @@ canvas {
     text-align: center;
     background-color: rgb(211,10,15);
     color: #FFFFFF;
-    z-index: 0;
+    z-index: -1;
 }
 
 #about {
@@ -83,6 +91,7 @@ canvas {
     color: #FFFFFF;
     font-family: Tahoma;
     font-style: italic;
+    z-index: 5;
 }
 
 #about a, #about a:HOVER, #about a:VISITED {
