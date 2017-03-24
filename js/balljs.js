@@ -440,12 +440,12 @@ function loadGame() {
             this.speedy = this.collisionSpeedy;
             
             // Infinite rebound prevention
-            if(this.checkInfinite && this.collisionBlock === null && this.speedy > -10*ratio && this.speedy < 10*ratio) {
-            	this.speedy = 20*ratio;
+            if(this.checkInfinite && this.collisionBlock === null && this.speedy > -ballradius && this.speedy < ballradius) {
+            	this.speedy = ballradius;
             	if(this.speedx > 0) {
-            		this.speedx = Math.sqrt(speed*speed-400*ratio);
+            		this.speedx = Math.sqrt(speed*speed-ballradius*ballradius);
             	} else {
-            		this.speedx = -Math.sqrt(speed*speed-400*ratio);
+            		this.speedx = -Math.sqrt(speed*speed-ballradius*ballradius);
             	}
             }
             this.horizontal = false;
@@ -456,7 +456,7 @@ function loadGame() {
                     blocks.splice(index, 1);
                 }
             } else {
-            	if(this.speedy > -10*ratio && this.speedy < 10*ratio) {
+            	if(this.speedy > -ballradius && this.speedy < ballradius) {
             		this.checkInfinite = true;
             	}
             }
