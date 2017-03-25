@@ -767,20 +767,28 @@ function loadGame() {
 			ctxBalls.fillStyle = "rgb(255,255,255)";
 			let launcherLengthP2 = Math.pow(launchTarget.x-launchx, 2)+Math.pow(launchTarget.y-height+ballradius, 2);
 			if(launcherLengthP2 > 100*ballradius*ballradius) {
+				let targetx = launchTarget.x;
+				let targety = launchTarget.y;				
 				let launcherLength = Math.sqrt(launcherLengthP2);
 				
+				if(launcherLength > height/2) {
+					targetx = (targetx-launchx)*height/(2*launcherLength)+launchx;
+					targety = (targety-height+ballradius)*height/(2*launcherLength)+height-ballradius;
+					launcherLength = height/2;
+				}
+				
 				let theta = 0;
-				if(launchTarget.x-launchx === 0) {
+				if(targetx-launchx === 0) {
 					theta = -Math.PI/2;
-				} else if(launchTarget.x-launchx > 0) {
-					theta = Math.atan((launchTarget.y-height+ballradius)/(launchTarget.x-launchx));
+				} else if(targetx-launchx > 0) {
+					theta = Math.atan((targety-height+ballradius)/(targetx-launchx));
 				} else {
-					theta = Math.PI + Math.atan((launchTarget.y-height+ballradius)/(launchTarget.x-launchx));
+					theta = Math.PI + Math.atan((targety-height+ballradius)/(targetx-launchx));
 				}
 				
 				let l = 6*ballradius;
-				let lx=launchx+l*(launchTarget.x-launchx)/launcherLength;
-				let ly=height-ballradius+l*(launchTarget.y-height+ballradius)/launcherLength;
+				let lx=launchx+l*(targetx-launchx)/launcherLength;
+				let ly=height-ballradius+l*(targety-height+ballradius)/launcherLength;
 				ctxBalls.beginPath();
 				ctxBalls.arc(launchx, height-ballradius, 1.5*ballradius, theta-Math.PI/8, theta+Math.PI/8, false);
 				ctxBalls.lineTo(lx, ly);
@@ -788,7 +796,7 @@ function loadGame() {
 				
 				for(let i = 1; i <= 16; i++) {
 					ctxBalls.beginPath();
-					ctxBalls.arc(lx+(launchTarget.x-lx)*i/8, ly+(launchTarget.y-ly)*i/8, launcherLength*ballradius/height, 0, Math.PI * 2, true);
+					ctxBalls.arc(lx+(targetx-lx)*i/7, ly+(targety-ly)*i/7, launcherLength*ballradius/height, 0, Math.PI * 2, true);
 					ctxBalls.fill();
 				}
 			}
