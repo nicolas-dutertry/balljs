@@ -564,7 +564,12 @@ function loadGame() {
         }
 
         // Compute new block count
-        var newBlockCount = 1 + Math.floor(Math.random()*(blockperrow-2));
+        // The most probable number is 3
+        var newBlockCount = 3;
+        var random = Math.random();
+        if(random > 0.5) {
+			newBlockCount = 1 + Math.floor((random-0.5)*2*(blockperrow-2));
+		}
         var availablePos = new Array();
         for(let i = 0; i < blockperrow; i++) {
         	availablePos.push(i);
