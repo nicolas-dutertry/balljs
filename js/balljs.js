@@ -578,7 +578,7 @@ function loadGame() {
         // Position new blocks randomly on first line
         for (let i = 0; i < newBlockCount; i++) {
         	let counter = level;
-            if (Math.random() < 0.5) {
+            if (Math.random() < 0.3) {
                 counter = 2*level;
             }
             let posIndex =  Math.floor(Math.random()*availablePos.length);
