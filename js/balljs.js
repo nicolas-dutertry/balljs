@@ -30,13 +30,13 @@ function loadGame() {
     var ratio2 = $(document).height() / 820;
     var ratio = (ratio1 > ratio2) ? ratio2 : ratio1;
 
-    var ballradius = 10*ratio;
+    var ballradius = 9*ratio;
     var blocklength = 60*ratio;
     var blockspace = 10*ratio;
     var blockFontSize = Math.floor(25*ratio);    
     var blockperrow = 7;
     var blockpercol = 8;
-    var speed = 600*ratio;
+    var speed = 800*ratio;
     var width = 500*ratio;
     var height = 710*ratio;
     var left = documentWidth/2-width/2;
@@ -182,7 +182,7 @@ function loadGame() {
     	
     	draw(time) {
     		if(!this.deleted) {
-    			let extradius = ballradius + Math.floor(ballradius*((Math.cos(time/100)/4)+1));
+    			let extradius = ballradius + Math.floor(ballradius*((Math.cos(time/50)/4)+1));
 	    		
 	    		if(extradius !== this.extradius) {
 	    			this.clear();	    	
