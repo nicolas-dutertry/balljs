@@ -65,7 +65,7 @@ canvas {
     text-align: center;
 }
 
-#reload {
+#reload, #sound {
 	position: fixed;
 	cursor: pointer;
 	z-index: 5;

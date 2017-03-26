@@ -17,7 +17,8 @@
  * limitations under the License.
  * 
  */
-			
+
+var mute = true;
 class SoundPool {
 	constructor(file, volume, size) {
 		this.file = file;
@@ -33,6 +34,9 @@ class SoundPool {
 	
 	
 	play() {
+               if(mute) {
+                        return;
+               }
 		if(this.pool[this.currSound].currentTime == 0 || this.pool[this.currSound].ended) {
 			this.pool[this.currSound].play();
 		}
@@ -94,6 +98,12 @@ function loadGame() {
     reloadImg.offset({top: reloadPos, left: left+reloadPos});
     reloadImg.width(fontSize*2);
     reloadImg.height(fontSize*2);
+
+    var soundImg = $("#sound");
+    soundImg.offset({top: reloadPos, left: left+width-reloadPos-fontSize*2});
+    soundImg.width(fontSize*2);
+    soundImg.height(fontSize*2);
+    soundImg.attr("src", mute ? "images/nosound.png" : "images/sound.png");
     
     if(localStorage && localStorage.bestScore) {
     	var bestDiv = $("#best");
@@ -899,6 +909,12 @@ function loadGame() {
     $("#reload").click(function() {
     	gameover = true;
     	loadGame();
+    });
+
+    $("#sound").off();
+    $("#sound").click(function() {
+    	mute = !mute;
+    	soundImg.attr("src", mute ? "images/nosound.png" : "images/sound.png");
     });
 
     // Start drawing
