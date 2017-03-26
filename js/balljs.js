@@ -17,8 +17,36 @@
  * limitations under the License.
  * 
  */
+			
+class SoundPool {
+	constructor(file, volume, size) {
+		this.file = file;
+		this.pool = new Array();
+		for(let i = 0; i < size; i++) {
+			let audio = new Audio(file);
+			audio.volume = volume;
+			audio.load();
+			this.pool.push(audio);
+		}
+		this.currSound = 0;
+	}
+	
+	
+	play() {
+		if(this.pool[this.currSound].currentTime == 0 || this.pool[this.currSound].ended) {
+			this.pool[this.currSound].play();
+		}
+		this.currSound = (this.currSound + 1) % this.pool.length;
+	};
+}
 
-$(function () {	
+var launchsound = new SoundPool("sounds/launch.wav", .2, 1);
+var blocksound = new SoundPool("sounds/rebound.wav", .2, 20);
+var explosionsound = new SoundPool("sounds/rebound.wav", .2, 10);
+var extraballsound = new SoundPool("sounds/newball.wav", .2, 10);
+
+
+$(function () {
 	loadGame();
 });
 
@@ -173,6 +201,7 @@ function loadGame() {
 	    		this.clear();
 	    		this.deleted = true;
 	    		ballCount++;
+	    		extraballsound.play();
     		}
     	}
     	
@@ -455,7 +484,10 @@ function loadGame() {
                 if (!block.decrease()) {
                     let index = blocks.indexOf(block);
                     blocks.splice(index, 1);
-                }
+                    explosionsound.play();
+                } else {
+					blocksound.play();
+				}
             } else {
             	if(this.speedy > -ballradius && this.speedy < ballradius) {
             		this.checkInfinite = true;
@@ -539,6 +571,8 @@ function loadGame() {
         }
         
         nextLaunchx = null;
+        
+        launchsound.play();
     }
 
     function nextLevel() {
