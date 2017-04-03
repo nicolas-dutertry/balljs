@@ -8,7 +8,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  * 
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,15 +25,15 @@ define(['app/constants', './obstacle', '../soundpool'], function(constants, Obst
 	class ExtraBall extends Obstacle{
 		constructor(ctx, x, y, radius, length, space, lineWidth) {
 			super(ctx);
-	        this.x = x;
-	        this.y = y;
-	        this.radius = radius;
-	        this.length = length;
-	        this.space = space;
-	        this.lineWidth = lineWidth;
-	        this.deleted = false;
-	        this.extradius = 0;
-	    }
+			this.x = x;
+			this.y = y;
+			this.radius = radius;
+			this.length = length;
+			this.space = space;
+			this.lineWidth = lineWidth;
+			this.deleted = false;
+			this.extradius = 0;
+		}
 		
 		nextLevel(game) {
 			this.clear();
@@ -46,24 +46,24 @@ define(['app/constants', './obstacle', '../soundpool'], function(constants, Obst
 		
 		getNextCollision(ball) {
 			if(!this.deleted) {
-	        	let time = ball.getCollisionTime(this.x, this.y, ball.radius + 2*this.radius);
-	        	if(time !== null && time >= ball.starttime) {
-	        		return {
-	        			time: time,
-	        			speedx: ball.speedx,
-	        			speedy: ball.speedy
-	        		}
-	        	}
-	    	}
+				let time = ball.getCollisionTime(this.x, this.y, ball.radius + 2*this.radius);
+				if(time !== null && time >= ball.starttime) {
+					return {
+						time: time,
+						speedx: ball.speedx,
+						speedy: ball.speedy
+					}
+				}
+			}
 			return null;
 		}
 		
 		processCollision(game) {
 			if(!this.deleted) {
-	    		this.clear();
-	    		this.deleted = true;
-	    		game.ballCount++;
-	    		extraballsound.play();
+				this.clear();
+				this.deleted = true;
+				game.ballCount++;
+				extraballsound.play();
 			}
 		}
 		
@@ -74,27 +74,27 @@ define(['app/constants', './obstacle', '../soundpool'], function(constants, Obst
 		draw(time) {
 			if(!this.deleted) {
 				let extradius = this.radius + Math.floor(this.radius*((Math.cos(time/50)/4)+1));
-	    		
-	    		if(extradius !== this.extradius) {
-	    			this.clear();	    	
-	    			
-	    			this.ctx.save();
-	    			this.ctx.strokeStyle = "rgb(255,255,255)";
-	    			this.ctx.lineWidth = this.lineWidth;
-	    			this.ctx.beginPath();
-	    			this.ctx.arc(this.x, this.y, extradius, 0, Math.PI * 2, true);
-	    			this.ctx.stroke();
-	    			this.ctx.restore();
-		    		
-	    			this.ctx.fillStyle = "rgb(255,255,255)";	    		
-	    			this.ctx.beginPath();
-	    			this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-	    			this.ctx.fill();
-		    		
-		    		this.extradius = extradius;
-	    		}
+				
+				if(extradius !== this.extradius) {
+					this.clear();			
+					
+					this.ctx.save();
+					this.ctx.strokeStyle = "rgb(255,255,255)";
+					this.ctx.lineWidth = this.lineWidth;
+					this.ctx.beginPath();
+					this.ctx.arc(this.x, this.y, extradius, 0, Math.PI * 2, true);
+					this.ctx.stroke();
+					this.ctx.restore();
+					
+					this.ctx.fillStyle = "rgb(255,255,255)";				
+					this.ctx.beginPath();
+					this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+					this.ctx.fill();
+					
+					this.extradius = extradius;
+				}
 			}
-	    }
+		}
 	}
 	
 	return ExtraBall;

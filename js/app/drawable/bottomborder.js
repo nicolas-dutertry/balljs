@@ -8,7 +8,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  * 
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,17 +21,17 @@
 define(['./obstacle'], function(Obstacle) {
 	class BottomBorder extends Obstacle {
 		constructor(y) {
-	        super(null);
-	        this.y = y;
-	    }
+			super(null);
+			this.y = y;
+		}
 		
 		getNextCollision(ball) {
 			if (ball.speedy > 0) {
 				return {
-	    			time: (this.y - ball.radius - ball.y) * 1000 / ball.speedy + ball.starttime,
-	    			speedx: ball.speedx,
-	    			speedy: -ball.speedy
-	        	}
+					time: (this.y - ball.radius - ball.y) * 1000 / ball.speedy + ball.starttime,
+					speedx: ball.speedx,
+					speedy: -ball.speedy
+				}
 			}
 			
 			return null;
