@@ -138,42 +138,42 @@ define(['app/constants', './obstacle', '../soundpool'], function(constants, Obst
 					let potentialY = ball.y + ball.speedy * (potentialTime - ball.starttime) / 1000;
 					
 					/*
-					 * Collision angle: theta cos(theta) =
-					 * (cornerX-potentialX)/ball.radius sin(theta) =
-					 * (cornerY-potentialY)/ball.radius
-					 * 
-					 * Speed angle: alpha cos(alpha) = speedX/speed sin(alpha) =
-					 * speedY/speed
-					 * 
-					 * New speed angle: beta = PI-alpha+2*theta cos(beta) =
-					 * newspeedX/speed sin(beta) = newspeedY/speed
-					 * 
-					 * We can use the following trigonometry formulae: cos(PI-a) =
-					 * -cos(a) sin(PI-a) = sin(a) cos(a-b) =
-					 * cos(a)cos(b)+sin(a)sin(b) sin(a-b) =
-					 * sin(a)cos(b)-cos(a)sin(b) cos(2a) = cos²(a) - 1 = 1 -
-					 * 2sin²(a) sin(2a) = 2cos(a)sin(a)
-					 * 
-					 * Thus: cos(beta) = cos(PI - alpha + 2*theta) = -cos(alpha -
-					 * 2*theta) = - [ cos(alpha)*cos(2*theta) +
-					 * sin(alpha)*sin(2*theta) ] = -
-					 * cos(alpha)*(2*cos²(theta)-1) -
-					 * 2*sin(alpha)*sin(theta)*cos(theta) newspeedX = -
-					 * speedX*(2*cos²(theta)-1) - 2*speedY*sin(theta)*cos(theta) =
-					 * speedX - 2*speedX*cos²(theta) -
-					 * 2*speedY*sin(theta)*cos(theta) = speedX -
-					 * 2*(speedX*cos(theta) + speedY*sin(theta))*cos(theta)
-					 * 
-					 * sin(beta) = sin(PI - alpha + 2*theta) = sin(alpha -
-					 * 2*theta) = sin(alpha)*cos(2*theta) -
-					 * cos(alpha)*sin(2*theta) = sin(alpha)*(1-2*sin²(theta)) -
-					 * 2*cos(alpha)*sin(theta)*cos(theta) newspeedY =
-					 * speedY*(1-2*sin²(theta)) - 2*speedX*sin(theta)*cos(theta) =
-					 * speedY - 2*speedY*sin²(theta) -
-					 * 2*speedX*sin(theta)*cos(theta) = speedY -
-					 * 2*(speedY*sin(theta) + speedX*cos(theta))*sin(theta)
-					 */
-					
+	        		 * Collision angle: theta
+	        		 * cos(theta) = (cornerX-potentialX)/ball.radius
+	        		 * sin(theta) = (cornerY-potentialY)/ball.radius
+	        		 * 
+	        		 * Speed angle: alpha
+	        		 * cos(alpha) = speedX/speed
+	        		 * sin(alpha) = speedY/speed
+	        		 * 
+	        		 * New speed angle: beta = PI-alpha+2*theta
+	        		 * cos(beta) = newspeedX/speed
+	        		 * sin(beta) = newspeedY/speed
+	        		 * 
+	        		 * We can use the following trigonometry formulae:
+	        		 * cos(PI-a) = -cos(a)
+	        		 * sin(PI-a) = sin(a)
+	        		 * cos(a-b) = cos(a)cos(b)+sin(a)sin(b)
+	        		 * sin(a-b) = sin(a)cos(b)-cos(a)sin(b)
+	        		 * cos(2a) = cos²(a) - 1
+	        		 *         = 1 - 2sin²(a)
+	        		 * sin(2a) = 2cos(a)sin(a)
+	        		 * 
+	        		 * Thus:
+	        		 * cos(beta) = cos(PI - alpha + 2*theta) = -cos(alpha - 2*theta)
+	        		 *           = - [ cos(alpha)*cos(2*theta) + sin(alpha)*sin(2*theta) ]
+	        		 *           = - cos(alpha)*(2*cos²(theta)-1) - 2*sin(alpha)*sin(theta)*cos(theta)
+	        		 * newspeedX = - speedX*(2*cos²(theta)-1) - 2*speedY*sin(theta)*cos(theta)
+	        		 *           = speedX - 2*speedX*cos²(theta) - 2*speedY*sin(theta)*cos(theta)
+	        		 *           = speedX - 2*(speedX*cos(theta) + speedY*sin(theta))*cos(theta)
+	        		 * 
+	        		 * sin(beta) = sin(PI - alpha + 2*theta) = sin(alpha - 2*theta)
+	        		 *           = sin(alpha)*cos(2*theta) - cos(alpha)*sin(2*theta)
+	        		 *           = sin(alpha)*(1-2*sin²(theta)) - 2*cos(alpha)*sin(theta)*cos(theta)
+	        		 * newspeedY = speedY*(1-2*sin²(theta)) - 2*speedX*sin(theta)*cos(theta)
+	        		 *           = speedY - 2*speedY*sin²(theta) - 2*speedX*sin(theta)*cos(theta)
+	        		 *           = speedY - 2*(speedY*sin(theta) + speedX*cos(theta))*sin(theta)
+	        		 */
 					
 					let costheta = (potentialCorner.x-potentialX)/ball.radius;						
 					let sintheta = (potentialCorner.y-potentialY)/ball.radius;
