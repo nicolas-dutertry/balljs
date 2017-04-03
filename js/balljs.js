@@ -17,7 +17,9 @@
  * limitations under the License.
  * 
  */
-
+const blockperrow = 7;
+const blockpercol = 8;
+    
 var mute = true;
 class SoundPool {
 	constructor(file, volume, size) {
@@ -49,6 +51,507 @@ var blocksound = new SoundPool("sounds/rebound.wav", .2, 20);
 var explosionsound = new SoundPool("sounds/rebound.wav", .2, 10);
 var extraballsound = new SoundPool("sounds/newball.wav", .2, 10);
 
+class Drawable {
+    constructor(ctx) {
+        this.ctx = ctx;
+    }
+    
+    draw(time) {}
+}
+
+class Obstacle extends Drawable {
+	constructor(ctx) {
+        super(ctx);
+    }
+	
+	nextLevel(game) {
+		return true;
+	}
+	
+	getNextCollision(ball) {
+		return null;
+	}
+	
+	// return NODESTROY, DESTROYED or BALLDESTROYED;
+	processCollision(game) {
+		return "NODESTROY";
+	}
+}
+
+class TopBorder extends Obstacle {
+	constructor() {
+        super(null);
+    }
+	
+	getNextCollision(ball) {
+		if (ball.speedy < 0) {
+			return {
+    			time: (ball.radius - ball.y) * 1000 / ball.speedy + ball.starttime,
+    			speedx: ball.speedx,
+    			speedy: -ball.speedy
+        	}
+		}
+		
+		return null;
+	}
+	
+}
+
+class BottomBorder extends Obstacle {
+	constructor(y) {
+        super(null);
+        this.y = y;
+    }
+	
+	getNextCollision(ball) {
+		if (ball.speedy > 0) {
+			return {
+    			time: (this.y - ball.radius - ball.y) * 1000 / ball.speedy + ball.starttime,
+    			speedx: ball.speedx,
+    			speedy: -ball.speedy
+        	}
+		}
+		
+		return null;
+	}
+	
+	processCollision(game) {
+		return "BALLDESTROYED";
+	}
+	
+}
+
+class LeftBorder extends Obstacle {
+	constructor() {
+        super(null);
+    }
+	
+	getNextCollision(ball) {
+		if (ball.speedx < 0) {
+			return {
+    			time: (ball.radius - ball.x) * 1000 / ball.speedx + ball.starttime,
+    			speedx: -ball.speedx,
+    			speedy: ball.speedy
+        	}
+		}
+		
+		return null;
+	}
+	
+}
+
+class RightBorder extends Obstacle {
+	constructor(x) {
+        super(null);
+        this.x = x;
+    }
+	
+	getNextCollision(ball) {
+		if (ball.speedx > 0) {
+			return {
+    			time: (this.x - ball.radius - ball.x) * 1000 / ball.speedx + ball.starttime,
+    			speedx: -ball.speedx,
+    			speedy: ball.speedy
+        	}
+		}
+		
+		return null;
+	}
+	
+}
+
+class Block extends Obstacle {
+    constructor(ctx, x, y, length, space, counter) {
+    	super(ctx);
+        this.x = x;
+        this.y = y;
+        this.length = length;
+        this.space = space;
+        this.counter = counter;
+        this.dirty = true;
+        this.fontSize = Math.floor(length/2.5);
+    }
+    
+    getNextCollision(ball) {
+    	let potentialCorner = null;
+    	let nextCollision = null;
+
+        if (ball.speedx > 0) {
+            let potentialTime = (this.x - ball.radius - ball.x) * 1000 / ball.speedx + ball.starttime;
+            let potentialY = ball.y + ball.speedy * (potentialTime - ball.starttime) / 1000;
+            if (potentialTime >= ball.starttime && potentialY > this.y - ball.radius && potentialY < this.y + this.length + ball.radius) {
+                if(potentialY < this.y) {
+                	potentialCorner = {
+                		x: this.x,
+                		y: this.y
+                	};
+                } else if(potentialY > this.y+this.length) {
+                	potentialCorner = {
+                    		x: this.x,
+                    		y: this.y+this.length
+                    	};
+                } else {
+                	nextCollision = {
+                			time: potentialTime,
+                			speedx: -ball.speedx,
+                			speedy: ball.speedy
+                	}
+                }
+            }
+        } else if (ball.speedx < 0) {
+            let potentialTime = (this.x + this.length + ball.radius - ball.x) * 1000 / ball.speedx + ball.starttime;
+            let potentialY = ball.y + ball.speedy * (potentialTime - ball.starttime) / 1000;
+            if (potentialTime >= ball.starttime && potentialY > this.y - ball.radius && potentialY < this.y + this.length + ball.radius) {
+            	if(potentialY < this.y) {
+                	potentialCorner = {
+                		x: this.x+this.length,
+                		y: this.y
+                	};
+                } else if(potentialY > this.y+this.length) {
+                	potentialCorner = {
+                    		x: this.x+this.length,
+                    		y: this.y+this.length
+                    	};
+                } else {
+                	nextCollision = {
+                			time: potentialTime,
+                			speedx: -ball.speedx,
+                			speedy: ball.speedy
+                	}
+                }
+            }
+        }
+
+        if (ball.speedy > 0) {
+            let potentialTime = (this.y - ball.radius - ball.y) * 1000 / ball.speedy + ball.starttime;
+            let potentialX = ball.x + ball.speedx * (potentialTime - ball.starttime) / 1000;
+            if (potentialTime >= ball.starttime && (nextCollision === null || potentialTime < nextCollision.time) && potentialX > this.x - ball.radius && potentialX < this.x + this.length + ball.radius) {
+            	if(potentialX < this.x) {
+                	potentialCorner = {
+                		x: this.x,
+                		y: this.y
+                	};
+                } else if(potentialX > this.x+this.length) {
+                	potentialCorner = {
+                    		x: this.x+this.length,
+                    		y: this.y
+                    	};
+                } else {
+                	nextCollision = {
+                			time: potentialTime,
+                			speedx: ball.speedx,
+                			speedy: -ball.speedy
+                	}
+                }
+            }
+        } else if (ball.speedy < 0) {
+            let potentialTime = (this.y + this.length + ball.radius - ball.y) * 1000 / ball.speedy + ball.starttime;
+            let potentialX = ball.x + ball.speedx * (potentialTime - ball.starttime) / 1000;
+            if (potentialTime >= ball.starttime && (nextCollision === null || potentialTime < nextCollision.time) && potentialX > this.x - ball.radius && potentialX < this.x + this.length + ball.radius) {
+            	if(potentialX < this.x) {
+                	potentialCorner = {
+                		x: this.x,
+                		y: this.y+this.length
+                	};
+                } else if(potentialX > this.x+this.length) {
+                	potentialCorner = {
+                    		x: this.x+this.length,
+                    		y: this.y+this.length
+                    	};
+                } else {
+                	nextCollision = {
+                			time: potentialTime,
+                			speedx: ball.speedx,
+                			speedy: -ball.speedy
+                	}
+                }
+            }
+        }
+        
+        if(potentialCorner !== null) {
+        	let potentialTime = ball.getCollisionTime(potentialCorner.x, potentialCorner.y, ball.radius);
+        	if(potentialTime !== null && potentialTime >= ball.starttime && (nextCollision === null || potentialTime < nextCollision.time)) {
+        		let potentialX = ball.x + ball.speedx * (potentialTime - ball.starttime) / 1000;
+        		let potentialY = ball.y + ball.speedy * (potentialTime - ball.starttime) / 1000;
+        		
+        		/*
+        		 * Collision angle: theta
+        		 * cos(theta) = (cornerX-potentialX)/ball.radius
+        		 * sin(theta) = (cornerY-potentialY)/ball.radius
+        		 * 
+        		 * Speed angle: alpha
+        		 * cos(alpha) = speedX/speed
+        		 * sin(alpha) = speedY/speed
+        		 * 
+        		 * New speed angle: beta = PI-alpha+2*theta
+        		 * cos(beta) = newspeedX/speed
+        		 * sin(beta) = newspeedY/speed
+        		 * 
+        		 * We can use the following trigonometry formulae:
+        		 * cos(PI-a) = -cos(a)
+        		 * sin(PI-a) = sin(a)
+        		 * cos(a-b) = cos(a)cos(b)+sin(a)sin(b)
+        		 * sin(a-b) = sin(a)cos(b)-cos(a)sin(b)
+        		 * cos(2a) = cos²(a) - 1
+        		 *         = 1 - 2sin²(a)
+        		 * sin(2a) = 2cos(a)sin(a)
+        		 * 
+        		 * Thus:
+        		 * cos(beta) = cos(PI - alpha + 2*theta) = -cos(alpha - 2*theta)
+        		 *           = - [ cos(alpha)*cos(2*theta) + sin(alpha)*sin(2*theta) ]
+        		 *           = - cos(alpha)*(2*cos²(theta)-1) - 2*sin(alpha)*sin(theta)*cos(theta)
+        		 * newspeedX = - speedX*(2*cos²(theta)-1) - 2*speedY*sin(theta)*cos(theta)
+        		 *           = speedX - 2*speedX*cos²(theta) - 2*speedY*sin(theta)*cos(theta)
+        		 *           = speedX - 2*(speedX*cos(theta) + speedY*sin(theta))*cos(theta)
+        		 * 
+        		 * sin(beta) = sin(PI - alpha + 2*theta) = sin(alpha - 2*theta)
+        		 *           = sin(alpha)*cos(2*theta) - cos(alpha)*sin(2*theta)
+        		 *           = sin(alpha)*(1-2*sin²(theta)) - 2*cos(alpha)*sin(theta)*cos(theta)
+        		 * newspeedY = speedY*(1-2*sin²(theta)) - 2*speedX*sin(theta)*cos(theta)
+        		 *           = speedY - 2*speedY*sin²(theta) - 2*speedX*sin(theta)*cos(theta)
+        		 *           = speedY - 2*(speedY*sin(theta) + speedX*cos(theta))*sin(theta)
+        		 */
+        		
+        		
+        		let costheta = (potentialCorner.x-potentialX)/ball.radius;                		
+        		let sintheta = (potentialCorner.y-potentialY)/ball.radius;
+        		let projection = ball.speedx*costheta + ball.speedy*sintheta;
+        		
+        		nextCollision = {
+            			time: potentialTime,
+            			speedx: ball.speedx-2*projection*costheta,
+            			speedy: ball.speedy-2*projection*sintheta
+            	}
+        	}
+        }
+        
+        return nextCollision;
+    }
+    
+    processCollision(game) {
+		this.dirty = true;
+		this.counter--;
+		
+		if(this.counter <= 0) {
+			this.ctx.clearRect(this.x-1, this.y-1, this.length+2, this.length+2);
+			explosionsound.play();
+			return "DESTROYED";
+		}
+		
+		blocksound.play();
+		return "NODESTROY";
+	}
+	
+	nextLevel(game) {
+		this.dirty = true;
+		this.ctx.clearRect(this.x-1, this.y-1, this.length+2, this.length+2);
+		this.y += this.length + this.space;
+		if(this.y > this.space + (this.length+this.space)*blockpercol) {
+            game.gameover = true;
+        }
+		
+		return true;
+	}
+
+    draw(time) {
+		if(this.dirty) {
+			var hue = 0.1 + this.counter/50;
+			var rgb = hsv2rgb(hue, 1, 1);
+			this.ctx.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+			this.ctx.fillRect(this.x, this.y, this.length, this.length);
+			this.ctx.font = "bold " + this.fontSize + "px Courier";
+			this.ctx.fillStyle = "rgb(0,0,0)";
+			let text = "" + this.counter;
+			let metric = this.ctx.measureText(text);
+			this.ctx.fillText(text, this.x + this.length/2 - metric.width/2, this.y + this.length/2 + this.fontSize/2);
+		}
+    }
+}
+
+class ExtraBall extends Obstacle{
+	constructor(ctx, x, y, radius, length, space, lineWidth) {
+		super(ctx);
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.length = length;
+        this.space = space;
+        this.lineWidth = lineWidth;
+        this.deleted = false;
+        this.extradius = 0;
+    }
+	
+	nextLevel(game) {
+		this.clear();
+		this.y += this.length + this.space;
+		if(this.y > this.space + (this.length + this.space)*(blockpercol+1))  {
+			this.deleted = true;
+		}
+		return !this.deleted;
+	}
+	
+	getNextCollision(ball) {
+		if(!this.deleted) {
+        	let time = ball.getCollisionTime(this.x, this.y, ball.radius + 2*this.radius);
+        	if(time !== null && time >= ball.starttime) {
+        		return {
+        			time: time,
+        			speedx: ball.speedx,
+        			speedy: ball.speedy
+        		}
+        	}
+    	}
+		return null;
+	}
+	
+	processCollision(game) {
+		if(!this.deleted) {
+    		this.clear();
+    		this.deleted = true;
+    		game.ballCount++;
+    		extraballsound.play();
+		}
+	}
+	
+	clear() {
+		this.ctx.clearRect(this.x-this.length/2, this.y-this.length/2, this.length, this.length);
+	}
+	
+	draw(time) {
+		if(!this.deleted) {
+			let extradius = this.radius + Math.floor(this.radius*((Math.cos(time/50)/4)+1));
+    		
+    		if(extradius !== this.extradius) {
+    			this.clear();	    	
+    			
+    			this.ctx.save();
+    			this.ctx.strokeStyle = "rgb(255,255,255)";
+    			this.ctx.lineWidth = this.lineWidth;
+    			this.ctx.beginPath();
+    			this.ctx.arc(this.x, this.y, extradius, 0, Math.PI * 2, true);
+    			this.ctx.stroke();
+    			this.ctx.restore();
+	    		
+    			this.ctx.fillStyle = "rgb(255,255,255)";	    		
+    			this.ctx.beginPath();
+    			this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    			this.ctx.fill();
+	    		
+	    		this.extradius = extradius;
+    		}
+		}
+    }
+}
+
+class Ball extends Drawable {
+    constructor(ctx, starttime, x, y, radius, speedx, speedy) {
+    	super(ctx);
+        this.starttime = starttime;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.speedx = speedx;
+        this.speedy = speedy;
+        this.launched = false;
+        this.checkInfinite = false;
+        this.nextCollision = null;
+    }
+
+    computeNextCollision(obstacles) {    	
+        this.nextCollision = null;
+        
+        for(let i = 0; i < obstacles.length; i++) {
+        	let nextCollision = obstacles[i].getNextCollision(this);
+        	if(nextCollision !== null && (this.nextCollision === null || this.nextCollision.time > nextCollision.time)) {
+        		this.nextCollision = {
+        			time: nextCollision.time,
+        			speedx: nextCollision.speedx,
+        			speedy: nextCollision.speedy,
+        			obstacle: obstacles[i]
+        		}
+        	}
+        }
+    }
+
+    processCollision() {        	
+        this.x = this.x + this.speedx * (this.nextCollision.time - this.starttime) / 1000;
+        this.y = this.y + this.speedy * (this.nextCollision.time - this.starttime) / 1000;
+        this.starttime = this.nextCollision.time;
+        
+        this.speedx = this.nextCollision.speedx;
+        this.speedy = this.nextCollision.speedy;
+        
+        // Infinite rebound prevention
+        if(this.checkInfinite && /*this.nextCollision.obstacle === null &&*/ this.speedy > -this.radius && this.speedy < this.radius) {
+        	this.speedy = this.radius;
+        	if(this.speedx > 0) {
+        		this.speedx = Math.sqrt(speed*speed-this.radius*this.radius);
+        	} else {
+        		this.speedx = -Math.sqrt(speed*speed-this.radius*this.radius);
+        	}
+        }
+        this.horizontal = false;
+        
+    	if(this.speedy > -this.radius && this.speedy < this.radius) {
+    		this.checkInfinite = true;
+    	}
+
+        return this.nextCollision;
+    }
+
+    draw(time) {
+		var newy = this.y + this.speedy * (time - this.starttime) / 1000;
+		/*
+		if(newy > height - this.radius) {
+			if(this.launched) {
+				this.deleted = true;
+			}
+			return;
+		}
+		*/
+		
+		this.launched = true;
+		
+        var newx = this.x + this.speedx * (time - this.starttime) / 1000;
+        
+        this.ctx.fillStyle = "rgb(255,255,255)";
+        this.ctx.beginPath();
+        this.ctx.arc(newx, newy, this.radius, 0, Math.PI * 2, true);
+        this.ctx.fill();
+    }
+    
+    getCollisionTime(ex, ey, d) {
+    	/*
+    	 * We simplify the equation by translating the referential (space and time) to the ball starting point.
+    	 * We will also work with seconds instead of milliseconds.  
+    	 */
+    	let tx = ex-this.x;
+    	let ty = ey-this.y;
+    	
+    	/*
+    	 * We want to know when the distance to the target will equal d.
+    	 * We use Pythagore :
+    	 * (tx-x)^2 + (ty-y)^2 - d^2 = 0
+    	 * (tx-speedx*time)^2 + (ty-speedy*time)^2 - d^2 = 0
+    	 * speedx^2*time^2 - 2*tx*speedx*time + tx^2 + speedy^2*time^2 - 2*ty*speedy*time + ty^2 - d^2 = 0
+    	 * (speedx^2 + speedy^2)*time^2 - (2*tx*speedx + 2*ty*speedy)*time + tx^2 + ty^2 - d^2 = 0
+    	 * 
+    	 * We end up with a quadratic equation (a*time^2+b*time+c)
+    	 */
+    	
+    	let a = this.speedx*this.speedx + this.speedy*this.speedy;
+    	let b = -(2*tx*this.speedx + 2*ty*this.speedy);
+    	let c = tx*tx + ty*ty - d*d;
+    	
+        let t = solveQuadraticEquation(a, b, c);
+         
+         if(t !== null) {
+        	 return t*1000+this.starttime;
+         }
+         
+         return null;
+    }
+}
 
 $(function () {
 	loadGame();
@@ -65,9 +568,7 @@ function loadGame() {
     var ballradius = 9*ratio;
     var blocklength = 60*ratio;
     var blockspace = 10*ratio;
-    var blockFontSize = Math.floor(25*ratio);    
-    var blockperrow = 7;
-    var blockpercol = 8;
+    var blockFontSize = Math.floor(25*ratio);
     var speed = 800*ratio;
     var width = 500*ratio;
     var height = 710*ratio;
@@ -75,8 +576,12 @@ function loadGame() {
     var fontSize = Math.floor(20*ratio);
     var launcherFontSize = Math.floor(18*ratio);
     
-    var blocks = new Array();
-    var extraballs = new Array();
+    var obstacles = new Array();
+    obstacles.push(new TopBorder());
+    obstacles.push(new BottomBorder(height));
+    obstacles.push(new LeftBorder());
+    obstacles.push(new RightBorder(width));
+    
     var balls = new Array();
     
     $("#toucharea").width(documentWidth);
@@ -141,434 +646,15 @@ function loadGame() {
     var ctxBalls = canvasBalls.getContext("2d");
     ctxBalls.clearRect(0, 0, canvasBalls.width, canvasBalls.height);
     
+    var game = {
+    	nextLaunchx: width / 2,
+	    level: 0,
+	    ballCount: 1,    
+	    gameover: false
+    };
     var launchx;
-    var nextLaunchx = width / 2;
-    var level = 0;    
-    var ballCount = 1;
     var launchTarget = null;
-    var touchPos = null;
-    var gameover = false;
-
-    class Block {
-        constructor(x, y, counter) {
-            this.x = x;
-            this.y = y;
-            this.counter = counter;
-            this.dirty = true;
-        }
-        
-        decrease() {
-			this.dirty = true;
-			this.counter--;
-			
-			if(this.counter <= 0) {
-				ctxBlocks.clearRect(this.x-1, this.y-1, blocklength+2, blocklength+2);
-				return false;
-			}
-			
-			return true;
-		}
-		
-		moveDown() {
-			this.dirty = true;
-			ctxBlocks.clearRect(this.x-1, this.y-1, blocklength+2, blocklength+2);
-			this.y += blocklength + blockspace;
-		}
-
-        draw() {
-			if(this.dirty) {
-				var hue = 0.1 + this.counter/50;
-				var rgb = hsv2rgb(hue, 1, 1);
-				ctxBlocks.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
-				ctxBlocks.fillRect(this.x, this.y, blocklength, blocklength);
-				ctxBlocks.font = "bold " + blockFontSize + "px Courier";
-				ctxBlocks.fillStyle = "rgb(0,0,0)";
-				let text = "" + this.counter;
-				let metric = ctxBlocks.measureText(text);
-				ctxBlocks.fillText(text, this.x + blocklength/2 - metric.width/2, this.y + blocklength/2 + fontSize/2);
-			}
-        }
-    }
-    
-    class ExtraBall {
-    	constructor(x, y) {
-            this.x = x;
-            this.y = y;
-            this.deleted = false;
-            this.extradius = 0;
-        }
-    	
-    	moveDown() {
-			this.clear();
-			this.y += blocklength + blockspace;
-			if(this.y > blockspace + (blocklength+blockspace)*(blockpercol+1))  {
-				this.deleted = true;
-			}
-		}
-    	
-    	processCollision() {
-    		if(!this.deleted) {
-	    		this.clear();
-	    		this.deleted = true;
-	    		ballCount++;
-	    		extraballsound.play();
-    		}
-    	}
-    	
-    	clear() {
-    		ctxBlocks.clearRect(this.x-blocklength/2, this.y-blocklength/2, blocklength, blocklength);
-    	}
-    	
-    	draw(time) {
-    		if(!this.deleted) {
-    			let extradius = ballradius + Math.floor(ballradius*((Math.cos(time/50)/4)+1));
-	    		
-	    		if(extradius !== this.extradius) {
-	    			this.clear();	    	
-	    			
-	    			ctxBlocks.save();
-		    		ctxBlocks.strokeStyle = "rgb(255,255,255)";
-		    		ctxBlocks.lineWidth = 4*ratio;
-		    		ctxBlocks.beginPath();
-		    		ctxBlocks.arc(this.x, this.y, extradius-2*ratio, 0, Math.PI * 2, true);
-		    		ctxBlocks.stroke();
-		    		ctxBlocks.restore();
-		    		
-		    		ctxBlocks.fillStyle = "rgb(255,255,255)";	    		
-		    		ctxBlocks.beginPath();
-		    		ctxBlocks.arc(this.x, this.y, ballradius, 0, Math.PI * 2, true);
-		    		ctxBlocks.fill();
-		    		
-		    		this.extradius = extradius;
-	    		}
-    		}
-        }
-    }
-
-    class Ball {
-        constructor(starttime, x, y, speedx, speedy) {
-            this.starttime = starttime;
-            this.x = x;
-            this.y = y;
-            this.speedx = speedx;
-            this.speedy = speedy;
-            this.launched = false;
-            this.deleted = false;
-            this.checkInfinite = false;
-            this.nextCollision = null;
-            this.computeNextCollision();
-        }
-
-        computeNextCollision() {
-        	if(this.deleted) {
-        		return;
-        	}
-        	
-            this.nextCollision = null;
-
-            // Check border collision
-            var collisionXTime;
-            if (this.speedx > 0) {
-                collisionXTime = (width - ballradius - this.x) * 1000 / this.speedx + this.starttime;
-            } else if (this.speedx < 0) {
-                collisionXTime = (ballradius - this.x) * 1000 / this.speedx + this.starttime;
-            }
-
-            var collisionYTime;
-            var collisionYType;
-            if (this.speedy > 0) {
-                collisionYTime = (height - ballradius - this.y) * 1000 / this.speedy + this.starttime;
-            } else if (this.speedy < 0) {
-                collisionYTime = (ballradius - this.y) * 1000 / this.speedy + this.starttime;
-            }
-
-            if (collisionYTime > collisionXTime) {
-            	this.nextCollision = {
-        			time: collisionXTime,
-        			block: null,
-        			speedx: -this.speedx,
-        			speedy: this.speedy,
-        			bottom: false
-            	}
-            } else {
-            	let bottom = this.speedy > 0;
-            	this.nextCollision = {
-        			time: collisionYTime,
-        			block: null,
-        			speedx: this.speedx,
-        			speedy: -this.speedy,
-        			bottom: bottom
-            	}
-            }
-
-            // Check collision with blocks
-            for (let i = 0; i < blocks.length; i++) {
-                let block = blocks[i];
-                let potentialCorner = null;
-
-                if (this.speedx > 0) {
-                    let potentialTime = (block.x - ballradius - this.x) * 1000 / this.speedx + this.starttime;
-                    let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
-                        if(potentialY < block.y) {
-                        	potentialCorner = {
-                        		x: block.x,
-                        		y: block.y
-                        	};
-                        } else if(potentialY > block.y+blocklength) {
-                        	potentialCorner = {
-                            		x: block.x,
-                            		y: block.y+blocklength
-                            	};
-                        } else {
-	                    	this.nextCollision.time = potentialTime;
-	                        this.nextCollision.block = block;
-	                        this.nextCollision.speedx = -this.speedx;
-	                        this.nextCollision.speedy = this.speedy;
-	                        this.nextCollision.bottom = false;
-                        }
-                    }
-                } else if (this.speedx < 0) {
-                    let potentialTime = (block.x + blocklength + ballradius - this.x) * 1000 / this.speedx + this.starttime;
-                    let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialY > block.y - ballradius && potentialY < block.y + blocklength + ballradius) {
-                    	if(potentialY < block.y) {
-                        	potentialCorner = {
-                        		x: block.x+blocklength,
-                        		y: block.y
-                        	};
-                        } else if(potentialY > block.y+blocklength) {
-                        	potentialCorner = {
-                            		x: block.x+blocklength,
-                            		y: block.y+blocklength
-                            	};
-                        } else {
-                        	this.nextCollision.time = potentialTime;
-	                        this.nextCollision.block = block;
-	                        this.nextCollision.speedx = -this.speedx;
-	                        this.nextCollision.speedy = this.speedy;
-	                        this.nextCollision.bottom = false;
-                        }
-                    }
-                }
-
-                if (this.speedy > 0) {
-                    let potentialTime = (block.y - ballradius - this.y) * 1000 / this.speedy + this.starttime;
-                    let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
-                    	if(potentialX < block.x) {
-                        	potentialCorner = {
-                        		x: block.x,
-                        		y: block.y
-                        	};
-                        } else if(potentialX > block.x+blocklength) {
-                        	potentialCorner = {
-                            		x: block.x+blocklength,
-                            		y: block.y
-                            	};
-                        } else {
-                        	this.nextCollision.time = potentialTime;
-	                        this.nextCollision.block = block;
-	                        this.nextCollision.speedx = this.speedx;
-	                        this.nextCollision.speedy = -this.speedy;
-	                        this.nextCollision.bottom = false;
-                        }
-                    }
-                } else if (this.speedy < 0) {
-                    let potentialTime = (block.y + blocklength + ballradius - this.y) * 1000 / this.speedy + this.starttime;
-                    let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
-                    if (potentialTime >= this.starttime && potentialTime < this.nextCollision.time && potentialX > block.x - ballradius && potentialX < block.x + blocklength + ballradius) {
-                    	if(potentialX < block.x) {
-                        	potentialCorner = {
-                        		x: block.x,
-                        		y: block.y+blocklength
-                        	};
-                        } else if(potentialX > block.x+blocklength) {
-                        	potentialCorner = {
-                            		x: block.x+blocklength,
-                            		y: block.y+blocklength
-                            	};
-                        } else {
-                        	this.nextCollision.time = potentialTime;
-	                        this.nextCollision.block = block;
-	                        this.nextCollision.speedx = this.speedx;
-	                        this.nextCollision.speedy = -this.speedy;
-	                        this.nextCollision.bottom = false;
-                        }
-                    }
-                }
-                
-                if(potentialCorner !== null) {
-                	let potentialTime = this.getCollisionTime(potentialCorner.x, potentialCorner.y, ballradius);
-                	if(potentialTime !== null && potentialTime >= this.starttime && potentialTime < this.nextCollision.time) {
-                		let potentialX = this.x + this.speedx * (potentialTime - this.starttime) / 1000;
-                		let potentialY = this.y + this.speedy * (potentialTime - this.starttime) / 1000;
-                		
-                		/*
-                		 * Collision angle: theta
-                		 * cos(theta) = (cornerX-potentialX)/ballradius
-                		 * sin(theta) = (cornerY-potentialY)/ballradius
-                		 * 
-                		 * Speed angle: alpha
-                		 * cos(alpha) = speedX/speed
-                		 * sin(alpha) = speedY/speed
-                		 * 
-                		 * New speed angle: beta = PI-alpha+2*theta
-                		 * cos(beta) = newspeedX/speed
-                		 * sin(beta) = newspeedY/speed
-                		 * 
-                		 * We can use the following trigonometry formulae:
-                		 * cos(PI-a) = -cos(a)
-                		 * sin(PI-a) = sin(a)
-                		 * cos(a-b) = cos(a)cos(b)+sin(a)sin(b)
-                		 * sin(a-b) = sin(a)cos(b)-cos(a)sin(b)
-                		 * cos(2a) = cos²(a) - 1
-                		 *         = 1 - 2sin²(a)
-                		 * sin(2a) = 2cos(a)sin(a)
-                		 * 
-                		 * Thus:
-                		 * cos(beta) = cos(PI - alpha + 2*theta) = -cos(alpha - 2*theta)
-                		 *           = - [ cos(alpha)*cos(2*theta) + sin(alpha)*sin(2*theta) ]
-                		 *           = - cos(alpha)*(2*cos²(theta)-1) - 2*sin(alpha)*sin(theta)*cos(theta)
-                		 * newspeedX = - speedX*(2*cos²(theta)-1) - 2*speedY*sin(theta)*cos(theta)
-                		 *           = speedX - 2*speedX*cos²(theta) - 2*speedY*sin(theta)*cos(theta)
-                		 *           = speedX - 2*(speedX*cos(theta) + speedY*sin(theta))*cos(theta)
-                		 * 
-                		 * sin(beta) = sin(PI - alpha + 2*theta) = sin(alpha - 2*theta)
-                		 *           = sin(alpha)*cos(2*theta) - cos(alpha)*sin(2*theta)
-                		 *           = sin(alpha)*(1-2*sin²(theta)) - 2*cos(alpha)*sin(theta)*cos(theta)
-                		 * newspeedY = speedY*(1-2*sin²(theta)) - 2*speedX*sin(theta)*cos(theta)
-                		 *           = speedY - 2*speedY*sin²(theta) - 2*speedX*sin(theta)*cos(theta)
-                		 *           = speedY - 2*(speedY*sin(theta) + speedX*cos(theta))*sin(theta)
-                		 */
-                		
-                		
-                		let costheta = (potentialCorner.x-potentialX)/ballradius;                		
-                		let sintheta = (potentialCorner.y-potentialY)/ballradius;
-                		let projection = this.speedx*costheta + this.speedy*sintheta;
-                		
-                		this.nextCollision.time = potentialTime;
-                        this.nextCollision.block = block;
-                        this.nextCollision.speedx = this.speedx-2*projection*costheta;
-                        this.nextCollision.speedy = this.speedy-2*projection*sintheta;
-                        this.nextCollision.bottom = false;
-                	}
-                }
-            }
-            
-            this.extraBallCollisions = new Array();
-            for (let i = 0; i < extraballs.length; i++) {
-            	if(!extraballs[i].deleted) {
-	            	let time = this.getCollisionTime(extraballs[i].x, extraballs[i].y, 3*ballradius);
-	            	if(time !== null && time >= this.starttime) {
-	            		this.extraBallCollisions.push({
-	            			time: time,
-	            			extraball: extraballs[i]
-	            		});
-	            	}
-            	}
-            }
-        }
-
-        processCollision() {        	
-            this.x = this.x + this.speedx * (this.nextCollision.time - this.starttime) / 1000;
-            this.y = this.y + this.speedy * (this.nextCollision.time - this.starttime) / 1000;
-            this.starttime = this.nextCollision.time;
-            
-            this.speedx = this.nextCollision.speedx;
-            this.speedy = this.nextCollision.speedy;
-            
-            // Infinite rebound prevention
-            if(this.checkInfinite && this.nextCollision.block === null && this.speedy > -ballradius && this.speedy < ballradius) {
-            	this.speedy = ballradius;
-            	if(this.speedx > 0) {
-            		this.speedx = Math.sqrt(speed*speed-ballradius*ballradius);
-            	} else {
-            		this.speedx = -Math.sqrt(speed*speed-ballradius*ballradius);
-            	}
-            }
-            this.horizontal = false;
-
-            let block = this.nextCollision.block;
-            if (block !== null) {
-                if (!block.decrease()) {
-                    let index = blocks.indexOf(block);
-                    blocks.splice(index, 1);
-                    explosionsound.play();
-                } else {
-					blocksound.play();
-				}
-            } else {
-            	if(this.speedy > -ballradius && this.speedy < ballradius) {
-            		this.checkInfinite = true;
-            	}
-            }
-
-            return this.nextCollision;
-        }
-        
-        checkExtraBallCollisions(time) {
-        	for (let j = 0; j < this.extraBallCollisions.length; j++) {
-        		let extraBallCollision = this.extraBallCollisions[j];
-        		if(extraBallCollision.time <= time) {
-        			extraBallCollision.extraball.processCollision();
-        			this.extraBallCollisions.splice(j, 1);
-        			j--;
-        		}
-        	}
-        }
-
-        draw(time) {
-			var newy = this.y + this.speedy * (time - this.starttime) / 1000;
-			if(newy > height - ballradius) {
-				if(this.launched) {
-					this.deleted = true;
-				}
-				return;
-			}
-			
-			this.launched = true;
-			
-            var newx = this.x + this.speedx * (time - this.starttime) / 1000;
-            
-            ctxBalls.fillStyle = "rgb(255,255,255)";
-            ctxBalls.beginPath();
-            ctxBalls.arc(newx, newy, ballradius, 0, Math.PI * 2, true);
-            ctxBalls.fill();
-        }
-        
-        getCollisionTime(ex, ey, d) {
-        	/*
-        	 * We simplify the equation by translating the referential (space and time) to the ball starting point.
-        	 * We will also work with seconds instead of milliseconds.  
-        	 */
-        	let tx = ex-this.x;
-        	let ty = ey-this.y;
-        	
-        	/*
-        	 * We want to know when the distance to the target will equal d.
-        	 * We use Pythagore :
-        	 * (tx-x)^2 + (ty-y)^2 - d^2 = 0
-        	 * (tx-speedx*time)^2 + (ty-speedy*time)^2 - d^2 = 0
-        	 * speedx^2*time^2 - 2*tx*speedx*time + tx^2 + speedy^2*time^2 - 2*ty*speedy*time + ty^2 - d^2 = 0
-        	 * (speedx^2 + speedy^2)*time^2 - (2*tx*speedx + 2*ty*speedy)*time + tx^2 + ty^2 - d^2 = 0
-        	 * 
-        	 * We end up with a quadratic equation (a*time^2+b*time+c)
-        	 */
-        	
-        	let a = this.speedx*this.speedx + this.speedy*this.speedy;
-        	let b = -(2*tx*this.speedx + 2*ty*this.speedy);
-        	let c = tx*tx + ty*ty - d*d;
-        	
-            let t = solveQuadraticEquation(a, b, c);
-             
-             if(t !== null) {
-            	 return t*1000+this.starttime;
-             }
-             
-             return null;
-        }
-    }
+    var touchPos = null;       
 
     function shoot(mousex, mousey) {
         let x = mousex - launchx;
@@ -576,35 +662,30 @@ function loadGame() {
         var speedx = x * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var speedy = y * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var currentTime = Date.now();        
-        for (var i = 0; i < ballCount; i++) {
-            balls.push(new Ball(currentTime + i * 90, launchx, height - ballradius, speedx, speedy));
+        for (var i = 0; i < game.ballCount; i++) {
+        	let ball = new Ball(ctxBalls, currentTime + i * 90, launchx, height - ballradius, ballradius, speedx, speedy);
+        	ball.computeNextCollision(obstacles);
+            balls.push(ball);
         }
         
-        nextLaunchx = null;
+        game.nextLaunchx = null;
         
         launchsound.play();
     }
 
     function nextLevel() {
         // Increment level
-    	level++;
+    	game.level++;
     	
-    	launchx = nextLaunchx;
-    	nextLaunchx = null;
+    	launchx = game.nextLaunchx;
+    	game.nextLaunchx = null;
         
     	// Move each existing block down
-        for (let i = 0; i < blocks.length; i++) {
-            blocks[i].moveDown();
-            if(blocks[i].y > blockspace + (blocklength+blockspace)*blockpercol) {
-                gameover = true;
-            }
-        }
-        for (let i = 0; i < extraballs.length; i++) {
-        	extraballs[i].moveDown();
-            if(extraballs[i].deleted) {
-            	extraballs.splice(i, 1);
+        for (let i = 0; i < obstacles.length; i++) {
+        	if(!obstacles[i].nextLevel(game)) {
+        		obstacles.splice(i, 1);
             	i--;
-            }
+        	}
         }
 
         // Compute new block count
@@ -621,39 +702,39 @@ function loadGame() {
         
         // Position new blocks randomly on first line
         for (let i = 0; i < newBlockCount; i++) {
-        	let counter = level;
+        	let counter = game.level;
             if (Math.random() < 0.3) {
-                counter = 2*level;
+                counter = 2*game.level;
             }
             let posIndex =  Math.floor(Math.random()*availablePos.length);
             let pos = availablePos[posIndex];
             availablePos.splice(posIndex, 1);
-            blocks.push(new Block(blockspace + (blockspace+blocklength)*pos, blockspace + blocklength, counter));
+            obstacles.push(new Block(ctxBlocks, blockspace + (blockspace+blocklength)*pos, blockspace + blocklength, blocklength, blockspace, counter));
         }
         
-        if(level > 1) {
+        if(game.level > 1) {
 	        let posIndex =  Math.floor(Math.random()*availablePos.length);
 	        let pos = availablePos[posIndex];
-	        extraballs.push(new ExtraBall(blockspace + (blockspace+blocklength)*pos+blocklength/2, blockspace + 3*blocklength/2));
+	        obstacles.push(new ExtraBall(ctxBlocks, blockspace + (blockspace+blocklength)*pos+blocklength/2, blockspace + 3*blocklength/2, ballradius, blocklength, blockspace, 4*ratio));
         }
         
-        if(gameover) {
+        if(game.gameover) {
         	if(localStorage) {
         		if(localStorage.bestScore) {
         			let bestScore = Number(localStorage.bestScore);
-        			if(level-1 > bestScore) {
-        				bestScore = level-1;
+        			if(game.level-1 > bestScore) {
+        				bestScore = game.level-1;
         				localStorage.bestScore = bestScore;
         			}
         		} else {
-        			let bestScore = level-1;
+        			let bestScore = game.level-1;
         			localStorage.bestScore = bestScore;
         		}
         	}
             gameOverDiv.css("z-index", "4");
             
         } else {
-        	scoreDiv.html("" + level);
+        	scoreDiv.html("" + game.level);
         }
     }
 
@@ -671,7 +752,7 @@ function loadGame() {
     }
 
     function drawAll() {
-    	if(gameover) {
+    	if(game.gameover) {
     		return;
     	}
 
@@ -702,21 +783,21 @@ function loadGame() {
             	let deletedBlocks = new Array();
                 for (let i = 0; i < collisionBalls.length; i++) {
                 	let ball = collisionBalls[i];
+                	// return NODESTROY, DESTROYED or BALLDESTROYED;
                 	let collision = ball.processCollision();
-                    if (collision.bottom) {
-                    	// Remove the ball since it's a collision with bottom
+                	let action = collision.obstacle.processCollision(game); 
+                    if (action === "BALLDESTROYED") {
+                    	// Remove the ball
                         let index = balls.indexOf(ball);
                         balls.splice(index, 1);
                         // The first removed ball will be the next launcher start point
-                        if (nextLaunchx === null) {
-                        	nextLaunchx = ball.x;
+                        if (game.nextLaunchx === null) {
+                        	game.nextLaunchx = ball.x;
                         }
-                    } else {
-                    	ball.checkExtraBallCollisions(collisionTime);
-                    	ball.computeNextCollision();
-                    	if(collision.block != null && collision.block.counter <= 0) {
-                    		deletedBlocks.push(collision.block);
-                    	}
+                    } else if (action === "DESTROYED") {
+                    	let index = obstacles.indexOf(collision.obstacle);
+                    	obstacles.splice(index, 1);
+                    	deletedBlocks.push(collision.obstacle);
                     }
                 }
                 
@@ -725,16 +806,15 @@ function loadGame() {
                 	let ball = balls[i];
                 	if(collisionBalls.indexOf(ball) >= 0) {
                 		// Balls in collisionBalls have already been recomputed 
+                		ball.computeNextCollision(obstacles);
                 		continue;
                 	}
                 	
                 	// Re-Compute only for balls which should have touch deleted blocks
-                	let deletedIndex = deletedBlocks.indexOf(ball.nextCollision.block);
+                	let deletedIndex = deletedBlocks.indexOf(ball.nextCollision.obstacle);
                 	if(deletedIndex >= 0) {
-                		// Also check if extra balls were touched before collision time
-                    	ball.checkExtraBallCollisions(collisionTime);
                     	// Re-compute
-                		ball.computeNextCollision();
+                		ball.computeNextCollision(obstacles);
                 	}
                 }                
                 
@@ -742,27 +822,18 @@ function loadGame() {
                     changeLevel = true;
                 }
             } else {
-            	// Check if extra balls were touched
-            	for (let i = 0; i < balls.length; i++) {
-            		balls[i].checkExtraBallCollisions(currentTime);
-                }
-                break;
+            	break;
             }
         }
 
-        // Move blocks down if necessary
-        if (level === 0 || changeLevel) {        	
+        // Move obstacles down if necessary
+        if (game.level === 0 || changeLevel) {        	
             nextLevel();
         }
 
-        // Draw blocks
-        for (let i = 0; i < blocks.length; i++) {
-            blocks[i].draw();
-        }
-        
-        // Draw extra balls
-        for (let i = 0; i < extraballs.length; i++) {
-        	extraballs[i].draw(currentTime);
+        // Draw obstacles
+        for (let i = 0; i < obstacles.length; i++) {
+        	obstacles[i].draw(currentTime);
         }
         
         // Clear previous frame drawing
@@ -775,7 +846,7 @@ function loadGame() {
 
         // Draw launcher start point
         if (launchx !== null) {
-            let launchCount = ballCount;
+            let launchCount = game.ballCount;
 			if(balls.length > 0) {
 				launchCount = 0;
 				for (let i = 0; i < balls.length; i++) {
@@ -799,10 +870,10 @@ function loadGame() {
 			}
         }
         
-        if (nextLaunchx !== null) {
+        if (game.nextLaunchx !== null) {
         	ctxBalls.beginPath();
             ctxBalls.fillStyle = "rgb(255,255,255)";
-            ctxBalls.arc(nextLaunchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
+            ctxBalls.arc(game.nextLaunchx, height - ballradius, ballradius, 0, Math.PI * 2, true);
             ctxBalls.fill();
         }        
         
@@ -847,7 +918,7 @@ function loadGame() {
         }
         
         // Schedule next drawing
-        if (!gameover) {
+        if (!game.gameover) {
             requestAnimationFrame(drawAll);
         }
     }
@@ -856,7 +927,7 @@ function loadGame() {
     $("#toucharea").off();
     
     $("#toucharea").on("vmousedown", function (evt) {
-        if (balls.length === 0 && !gameover) {
+        if (balls.length === 0 && !game.gameover) {
             touchPos = getMousePos(evt);
         }
     });
@@ -907,7 +978,7 @@ function loadGame() {
     // Reload button
     $("#reload").off();
     $("#reload").click(function() {
-    	gameover = true;
+    	game.gameover = true;
     	loadGame();
     });
 
