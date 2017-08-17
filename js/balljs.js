@@ -111,6 +111,12 @@ require([
 		$("canvas").attr("width", width);
 		$("canvas").attr("height", height+2);
 		$("canvas").offset({top: headerDiv.height(), left: left});
+        
+        var helpDiv = $("#help");
+        helpDiv.css("display", "block");
+		helpDiv.css("font-size", fontSize*1.5 + "px");		
+		helpDiv.offset({top: height/2, left: left+0.05*width});
+		helpDiv.width(0.9*width);
 		
 		var gameOverDiv = $("#game-over");
 		gameOverDiv.css("font-size", fontSize*2 + "px");
@@ -148,6 +154,8 @@ require([
 		var touchPos = null;
 	
 		function shoot(mousex, mousey) {
+            helpDiv.css("display", "none");
+            
 			let x = mousex - launchx;
 			let y = mousey - height + 5;
 			var speedx = x * speed / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));

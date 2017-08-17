@@ -31,7 +31,7 @@ body {
 	display: block;
     position: fixed;
     background: transparent;
-    z-index: 4;
+    z-index: 5;
 }
 
 #main {
@@ -74,6 +74,13 @@ canvas {
 #best {
     position: fixed;
     display: block;
+}
+
+#help {
+	position: fixed;
+    text-align: center;
+    color: #BBBBBB;
+    z-index: 4;
 }
 
 #game-over {
